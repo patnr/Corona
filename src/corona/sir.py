@@ -1,3 +1,4 @@
+"""Adapted from ``scipython.com/book/chapter-8-scipy/additional-examples/the-sir-epidemic-model/``"""
 from corona.utils import *
 from scipy.integrate import odeint
 

@@ -70,6 +70,7 @@ def freshfig(num=None,figsize=None,*args,**kwargs):
     return fig, ax
 
 def reverse_legend(ax):
+    "Reverse order of legend items in ``ax``."
     leg = ax.get_legend_handles_labels()
     leg = list(map(list, zip(*leg)))[::-1]
     ax.legend(*zip(*leg))
@@ -124,7 +125,8 @@ def ens_compatible(func):
 
 
 
-def round2sigfig(num,prec=1):
+def round2sigfig(num,nfig=1):
+    """Round number to significant figures"""
 
     def ndecimal(x):
         if x==0 or not np.isfinite(x):
@@ -133,6 +135,6 @@ def round2sigfig(num,prec=1):
         else:
             return -int(floor(log10(abs(x))))
 
-    nfig = prec-1
+    nfig =nfig-1
     n    = nfig + ndecimal(num)
     return np.round(num, n) # n specified => float (always)

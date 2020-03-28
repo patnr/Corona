@@ -1,5 +1,5 @@
 ##
-"""Reproduce gabgoh.github.io/COVID,
+"""Reproduce ``gabgoh.github.io/COVID``,
 
 which uses a SEIR model elaborated with clinical dynamics.
 
