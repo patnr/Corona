@@ -81,6 +81,87 @@ colrs = dict(
 
 thousands = mpl.ticker.StrMethodFormatter('{x:,.0f}')
 
+def reverse_legend(ax,**kws):
+    "Reverse order of legend items in ``ax``."
+    leg = ax.get_legend_handles_labels()
+    leg = list(map(list, zip(*leg)))[::-1]
+    ax.legend(*zip(*leg),**kws)
+
+
+class StackedBarChart:
+    """A bar chart (histogram),
+
+    but stacking each series on top of the previous.
+    """
+    def __init__(self,ax,state,tt_full):
+        self.ax = ax
+        self.state = state
+        self.tt_full = tt_full
+
+        self.stack = {}
+        self.handles = {}
+
+        self.dt = 2 # plot resolution (in days)
+        t_end = tt_full[-1]
+        self.tt = arange(0,t_end,self.dt)
+
+        self.alpha = .65
+
+    def add(self,label):
+        # Down-sample (interpolate)
+        yy = np.interp(self.tt, self.tt_full, getattr(self.state,label))
+         
+        # Accumulate bars
+        cum = np.sum([y for y in self.stack.values()], 0)
+
+        # Plot
+        hh = self.ax.bar(self.tt, yy, .75*self.dt, bottom=cum,
+                label=label, color=colrs[label],
+                alpha=self.alpha, align="edge",picker=5)
+
+        # Append bar heights to stack
+        self.handles[label] = hh
+        self.stack[label] = yy
+
+    def day_index(self,t):      return abs(self.tt      - t).argmin()
+    def day_index_full(self,t): return abs(self.tt_full - t).argmin()
+
+    def set_legend_for_day(self,t):
+        iDay = self.day_index_full(t)
+        handles, labels = self.ax.get_legend_handles_labels()
+        for i,lbl in enumerate(labels):
+            num  = getattr(self.state,lbl)[iDay]
+            new  = lbl.split(":")[0] + ": "
+            new += thousands(round2sigfig(num,3))
+            labels[i] = new
+        self.ax.legend(handles[::-1],labels[::-1],
+                title="Day %d"%self.tt_full[iDay],
+                **leg_kws)
+        plt.pause(0.01)
+
+    def set_alpha_for_day(self,t):
+
+        def setter(iDay,alpha):
+            for label, rectangles in self.handles.items():
+                rectangles[iDay].set_alpha(alpha)
+
+        # Reset alpha
+        try:
+            setter(self._iDay_alpha, self.alpha)
+        except AttributeError:
+            pass
+
+        # Set alpha
+        iDay = self.day_index(t)
+        setter(iDay,1)
+        plt.pause(0.01)
+        self._iDay_alpha = iDay
+
+    def onpick(self,event):
+        rectangle = event.artist
+        time = rectangle.xy[0]
+        self.set_legend_for_day(time)
+        self.set_alpha_for_day(time)
 
 
 def rk4(f, x, t, dt, order=4):
