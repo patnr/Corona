@@ -156,9 +156,11 @@ class NamedState:
     R_Sevr      : float
     R_Fatl      : float
     @property
-    def Fatalities(self): return self.R_Fatl
-    @property
     def Hospitalized(self): return self.I_Hosp + self.I_Fatl
+    @property
+    def Recovered(self): return self.R_Mild + self.R_Sevr
+    @property
+    def Fatalities(self): return self.R_Fatl
 
 state = NamedState(*N*xx.T)
 
@@ -176,78 +178,121 @@ fig, ax = freshfig(1)
 # if use_simple_model:
 #     lbl='Recovered'; ax.plot(tt, RR, label=lbl, c=colrs[lbl])
 
-def stack_bar(label):
-    """Add a bar chart (histogram),
+class StackedBarChart:
+    """A bar chart (histogram),
 
-    but stack on top of previously added.
+    but stacking each series on top of the previous.
     """
-    stack = stack_bar.stack
-    ax    = stack_bar.ax
+    def __init__(self,ax,state,tt_full):
+        self.ax = ax
+        self.state = state
+        self.tt_full = tt_full
 
-    # Down-sample (interpolate)
-    _dt = 2 # plot resolution (in days)
-    _xx = arange(0,t_end,_dt)
-    _yy = np.interp(_xx, tt, getattr(state,label))
-     
-    cum = np.sum([y for y,l in stack], 0)
+        self.stack = {}
+        self.handles = {}
 
-    h = ax.bar(_xx, _yy, .75*_dt, label=label, bottom=cum,
-            color=colrs[label], alpha=0.7, align="edge",picker=5)
-    stack_bar.handles += h
+        self.dt = 2 # plot resolution (in days)
+        self.tt = arange(0,t_end,self.dt)
 
-    stack.append((_yy,label))
+        self.alpha = .65
 
-# Init stacked bar chart
-stack_bar.stack = []
-stack_bar.ax = ax
-stack_bar.handles = []
+    def add(self,label):
+        # Down-sample (interpolate)
+        yy = np.interp(self.tt, self.tt_full, getattr(self.state,label))
+         
+        # Accumulate bars
+        cum = np.sum([y for y in self.stack.values()], 0)
+
+        # Plot
+        hh = self.ax.bar(self.tt, yy, .75*self.dt, bottom=cum,
+                label=label, color=colrs[label],
+                alpha=self.alpha, align="edge",picker=5)
+
+        # Append bar heights to stack
+        self.handles[label] = hh
+        self.stack[label] = yy
+
+    def day_index(self,t):      return abs(self.tt      - t).argmin()
+    def day_index_full(self,t): return abs(self.tt_full - t).argmin()
+
+    def set_legend_for_day(self,t):
+        iDay = self.day_index_full(t)
+        handles, labels = self.ax.get_legend_handles_labels()
+        for i,lbl in enumerate(labels):
+            num  = getattr(self.state,lbl)[iDay]
+            new  = lbl.split(":")[0] + ": "
+            new += thousands(round2sigfig(num,3))
+            labels[i] = new
+        self.ax.legend(handles[::-1],labels[::-1],
+                title="Day %d"%self.tt_full[iDay],
+                **leg_kws)
+        plt.pause(0.01)
+
+    def set_alpha_for_day(self,t):
+
+        def setter(iDay,alpha):
+            for label, rectangles in self.handles.items():
+                rectangles[iDay].set_alpha(alpha)
+
+        # Reset alpha
+        try:
+            setter(self._iDay_alpha, self.alpha)
+        except AttributeError:
+            pass
+
+        # Set alpha
+        iDay = self.day_index(t)
+        setter(iDay,1)
+        plt.pause(0.01)
+        self._iDay_alpha = iDay
+
+    def onpick(self,event):
+        rectangle = event.artist
+        time = rectangle.xy[0]
+        self.set_legend_for_day(time)
+        self.set_alpha_for_day(time)
+
+
+
 # Add bars
-stack_bar("Fatalities")
-stack_bar("Hospitalized")
-stack_bar("Infected")
-stack_bar("Exposed")
+barchart = StackedBarChart(ax,state,tt)
+barchart.add("Fatalities")
+barchart.add("Hospitalized")
+# barchart.add("Recovered")
+barchart.add("Infected")
+barchart.add("Exposed")
+# barchart.add("Susceptible")
+fig.canvas.mpl_connect('pick_event', barchart.onpick)
 
-
-def todays_legend(day):
-    handles, labels = ax.get_legend_handles_labels()
-    for i,lbl in enumerate(labels):
-        num  = getattr(state,lbl)[day]
-        new  = lbl.split(":")[0]
-        new += ": %d"%int(round2sigfig(num,3))
-        labels[i] =new
-    ax.legend(handles[::-1],labels[::-1], title="Day %d"%tt[day])
-    plt.pause(0.01)
-
-
-def onpick(event):
-    rectangle = event.artist
-    today = rectangle.xy[0]
-    today_k = abs(tt-today).argmin()
-    todays_legend(today_k)
-fig.canvas.mpl_connect('pick_event', onpick)
-
-
+# Plot number of respirators
 # nrk.no/vestland/mener-helsemyndighetene-overdriver-intensivkapasiteten-i-norge-1.14938514
-# nRespirators = 1000
-# ax
+nRespirators = 10000
+ax.plot([0,t_end], 2*[nRespirators],"k--",lw=1,label="_nolegend_")
+# ax.text(t_end, nRespirators,"Num. of respirators", va="bottom", ha="right",fontsize="small")
+ax.text(0, nRespirators,"Num. of respirators", va="bottom", fontsize="small")
 
+# Plot intervention line:
+axY = ax.get_ylim()[1]
+ax.plot(2*[InterventionTime], [0,axY], "k--", lw=1,label="_nolegend_")
+ax.text(InterventionTime, axY,"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
 
 # Adjust plot properties
 ax.set_xlabel('Time (days)')
 # ax.set_ylabel('People')
-ax.legend()
-ax.set_title("Click bars for number info.")
-reverse_legend(ax)
+leg_kws = dict(loc="upper left", bbox_to_anchor=(0.1,1), fontsize="8")
+ax.legend(
+        list(barchart.handles.values())[::-1],
+        list(barchart.handles.keys())[::-1],
+        **leg_kws)
+# reverse_legend(ax)
+# ax.legend(**leg_kws)
 # ax.set_ylim(0,9e5)
 ax.set_xlim(0,t_end)
-# Plot intervention line:
-ax.plot(2*[InterventionTime], [0,ax.get_ylim()[1]], "k--", lw=1,label="_nolegend_")
 
 # More adjustments:
 for edge in ["right","left","top"]:
     ax.spines[edge].set_visible(False)
 ax.grid(axis="y",ls="--",alpha=0.2, color="k")
-thousands = mpl.ticker.StrMethodFormatter('{x:,.0f}')
 ax.yaxis.set_major_formatter(thousands)
 ax.tick_params(axis="y",pad=-1,length=0)
 ax.tick_params(axis="both",labelsize="small")

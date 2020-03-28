@@ -69,12 +69,6 @@ def freshfig(num=None,figsize=None,*args,**kwargs):
     _, ax = plt.subplots(num=fig.number,*args,**kwargs)
     return fig, ax
 
-def reverse_legend(ax):
-    "Reverse order of legend items in ``ax``."
-    leg = ax.get_legend_handles_labels()
-    leg = list(map(list, zip(*leg)))[::-1]
-    ax.legend(*zip(*leg))
-
 
 colrs = dict(
         Fatalities="#386cb0",
@@ -85,7 +79,7 @@ colrs = dict(
         Susceptible="grey",
         )
 
-
+thousands = mpl.ticker.StrMethodFormatter('{x:,.0f}')
 
 
 
