@@ -162,10 +162,6 @@ class NamedState:
 
 state = NamedState(*N*xx.T)
 
-# Print #infected
-get_k = lambda t: abs(tt-100).argmin()
-sometime = 100
-print(f"Infected at t={sometime} days:", int(round(II[get_k(sometime)])))
 
 
 

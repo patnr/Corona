@@ -6,7 +6,7 @@ This repo holds research on the Corona epidemic.
 
 
 
-Installation
+Get started
 ================================================
 Works on Linux/Windows/Mac.
 
@@ -24,6 +24,8 @@ Works on Linux/Windows/Mac.
 
 3. **Test** by running: `$ ipython`  
    Then `In [1]: run src/corona/epcalc.py`  
+   You should get output like this:
+   ![Screenshot from epcalc.py](./screenshot_epcalc.png)
 
-If the installation fails, you probably need to [create a new Python environment](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#managing-environments).
+If the installation fails, you probably need to [create & activate a new Python environment](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#managing-environments).
 
