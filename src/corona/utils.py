@@ -69,7 +69,20 @@ def freshfig(num=None,figsize=None,*args,**kwargs):
     _, ax = plt.subplots(num=fig.number,*args,**kwargs)
     return fig, ax
 
+def reverse_legend(ax):
+    leg = ax.get_legend_handles_labels()
+    leg = list(map(list, zip(*leg)))[::-1]
+    ax.legend(*zip(*leg))
 
+
+colrs = dict(
+        Fatalities="#386cb0",
+        Hospitalized="#8da0cb",
+        Recovered="#4daf4a",
+        Infected="#f0027f",
+        Exposed="#fdc086",
+        Susceptible="grey",
+        )
 
 
 
@@ -106,3 +119,20 @@ def ens_compatible(func):
     def wrapr(x,*args,**kwargs):
         return np.asarray(func(x.T,*args,**kwargs)).T
     return wrapr
+
+
+
+
+
+def round2sigfig(num,prec=1):
+
+    def ndecimal(x):
+        if x==0 or not np.isfinite(x):
+            # "Behaviour not defined" => should not be relied upon.
+            return 1
+        else:
+            return -int(floor(log10(abs(x))))
+
+    nfig = prec-1
+    n    = nfig + ndecimal(num)
+    return np.round(num, n) # n specified => float (always)

@@ -7,7 +7,8 @@ The same code can also be used to run
 the "simple" SEIR model, and also SIR.
 """
 
-# TODO: recovery from death?
+use_simple_model = False
+
 # TODO: plot that evidences sum-to-1
 # TODO: make Intervention
 # TODO: make SEIRS
@@ -16,7 +17,6 @@ the "simple" SEIR model, and also SIR.
 from corona.utils import *
 
 ## Params
-use_simple_model = False
 # Total population
 N = 7*10**6
 
@@ -67,15 +67,15 @@ else:
             b *= intervention_multiplier
 
         # SEIR
-        # Fluxes between compartments
-        dSE = b*S*I
-        dEI = a*E
-        dIR = gamma*I
+        # Fluxes
+        S2E = b*S*I
+        E2I = a*E
+        I2R = gamma*I
         # Changes (for each compartment)
-        dS = -dSE
-        dE = +dSE - dEI
-        dI = -dIR + dEI
-        dR = +dIR # proxy var
+        dS = -S2E
+        dE = +S2E - E2I
+        dI = -I2R + E2I
+        dR = +I2R # proxy var
 
         # Clinical dynamics
         # Fluxes to recovery (or death)
@@ -83,9 +83,9 @@ else:
         dIR_Sevr = IS / D_hospital_lag 
         dIR_Dead = IF / D_death        
         # Changes to Infected
-        dMild   = pMild*dIR - dIR_Mild
-        dSevr   = pSevr*dIR - dIR_Sevr
-        dFatal  = pDead*dIR - dIR_Dead
+        dMild   = pMild*I2R - dIR_Mild
+        dSevr   = pSevr*I2R - dIR_Sevr
+        dFatal  = pDead*I2R - dIR_Dead
         # Hospitalized
         dSevr_H = (1/D_hospital_lag)*IS - (1/D_recovery_severe)*ISH
 
@@ -126,8 +126,8 @@ else:
 
 ## Integrate
 t_end = 200 # days
-dt = 1
-tt = np.linspace(0, t_end, int(t_end/dt)+1)
+dt = 0.1
+tt = linspace(0, t_end, int(t_end/dt)+1)
 
 # from scipy.integrate import odeint
 # xx = odeint(dxdt, x0, tt)
@@ -142,26 +142,122 @@ SS, EE, II, *others = N * xx.T
 if use_simple_model:     RR, = others
 else: IM,IS,ISH,IF, RM,RS,RF = others
 
+from dataclasses import dataclass
+@dataclass
+class NamedState:
+    Susceptible : float
+    Exposed     : float
+    Infected    : float
+    I_Mild      : float
+    I_Sevr      : float
+    I_Hosp      : float
+    I_Fatl      : float
+    R_Mild      : float
+    R_Sevr      : float
+    R_Fatl      : float
+    @property
+    def Fatalities(self): return self.R_Fatl
+    @property
+    def Hospitalized(self): return self.I_Hosp + self.I_Fatl
+
+state = NamedState(*N*xx.T)
+
 # Print #infected
 get_k = lambda t: abs(tt-100).argmin()
 sometime = 100
-print(f"Infected at t={sometime} days:", int(II[get_k(sometime)]))
+print(f"Infected at t={sometime} days:", int(round(II[get_k(sometime)])))
+
+
 
 ## Plot
 plt.ion()
 fig, ax = freshfig(1)
-# fatalities hostpitalized   Reocvered  Infectuous Exposed
-# "#386cb0", "#8da0cb",      "#4daf4a", "#f0027f", "#fdc086"
-# ax.plot(tt, SS, c="gray",    label='Susceptible')
-ax.plot(tt, EE+II, c="#fdc086", label='Exposed (+I)')
-ax.plot(tt, II, c="#f0027f", label='Infected')
-if use_simple_model:
-    ax.plot(tt, RR, c="#4daf4a", label='Recovered')
+
+# Normal plot:
+# # lbl='Susceptible'; ax.plot(tt, SS, label=lbl, c=colrs[lbl])
+# lbl='Exposed'    ; ax.plot(tt, EE, label=lbl, c=colrs[lbl])
+# lbl='Infected'   ; ax.plot(tt, II, label=lbl, c=colrs[lbl])
+# if use_simple_model:
+#     lbl='Recovered'; ax.plot(tt, RR, label=lbl, c=colrs[lbl])
+
+def stack_bar(label):
+    """Add a bar chart (histogram),
+
+    but stack on top of previously added.
+    """
+    stack = stack_bar.stack
+    ax    = stack_bar.ax
+
+    # Down-sample (interpolate)
+    _dt = 2 # plot resolution (in days)
+    _xx = arange(0,t_end,_dt)
+    _yy = np.interp(_xx, tt, getattr(state,label))
+     
+    cum = np.sum([y for y,l in stack], 0)
+
+    h = ax.bar(_xx, _yy, .75*_dt, label=label, bottom=cum,
+            color=colrs[label], alpha=0.7, align="edge",picker=5)
+    stack_bar.handles += h
+
+    stack.append((_yy,label))
+
+# Init stacked bar chart
+stack_bar.stack = []
+stack_bar.ax = ax
+stack_bar.handles = []
+# Add bars
+stack_bar("Fatalities")
+stack_bar("Hospitalized")
+stack_bar("Infected")
+stack_bar("Exposed")
+
+
+def todays_legend(day):
+    handles, labels = ax.get_legend_handles_labels()
+    for i,lbl in enumerate(labels):
+        num  = getattr(state,lbl)[day]
+        new  = lbl.split(":")[0]
+        new += ": %d"%int(round2sigfig(num,3))
+        labels[i] =new
+    ax.legend(handles[::-1],labels[::-1], title="Day %d"%tt[day])
+    plt.pause(0.01)
+
+
+def onpick(event):
+    rectangle = event.artist
+    today = rectangle.xy[0]
+    today_k = abs(tt-today).argmin()
+    todays_legend(today_k)
+fig.canvas.mpl_connect('pick_event', onpick)
+
+
+# nrk.no/vestland/mener-helsemyndighetene-overdriver-intensivkapasiteten-i-norge-1.14938514
+# nRespirators = 1000
+# ax
+
+
+# Adjust plot properties
 ax.set_xlabel('Time (days)')
-ax.set_ylabel('People')
+# ax.set_ylabel('People')
+ax.legend()
+ax.set_title("Click bars for number info.")
+reverse_legend(ax)
 # ax.set_ylim(0,9e5)
-ax.grid()
-legend = ax.legend()
+ax.set_xlim(0,t_end)
+# Plot intervention line:
+ax.plot(2*[InterventionTime], [0,ax.get_ylim()[1]], "k--", lw=1,label="_nolegend_")
+
+# More adjustments:
+for edge in ["right","left","top"]:
+    ax.spines[edge].set_visible(False)
+ax.grid(axis="y",ls="--",alpha=0.2, color="k")
+thousands = mpl.ticker.StrMethodFormatter('{x:,.0f}')
+ax.yaxis.set_major_formatter(thousands)
+ax.tick_params(axis="y",pad=-1,length=0)
+ax.tick_params(axis="both",labelsize="small")
+_ = ax.get_yticklabels()
+plt.pause(0.1) # avoid disappearing ticks bug
+ax.set_yticklabels(_, ha="left", va="bottom")
 
 ##
 
