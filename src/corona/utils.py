@@ -38,7 +38,7 @@ from numpy import \
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt 
-# plt.ion()
+plt.ion()
 
 np.set_printoptions(suppress=True,threshold=200,precision=6)
 # Instead of set_np_linewidth, just let terminal do wrapping:

@@ -144,7 +144,6 @@ class NamedState:
 state = NamedState(*xx.T)
 
 ## Plot
-plt.ion()
 fig, ax = freshfig(1)
 
 # Normal plot:
@@ -193,6 +192,9 @@ ax.tick_params(axis="both",labelsize="small")
 _ = ax.get_yticklabels()
 plt.pause(0.1) # avoid disappearing ticks bug
 ax.set_yticklabels(_, ha="left", va="bottom")
+
+try:    __IPYTHON__
+except: plt.show(block=True)
 
 ##
 

@@ -12,20 +12,22 @@ Get started
 Works on Linux/Windows/Mac.
 
 1. **Prerequisite**: Python>=3.7.  
-   If you're not an admin or expert:  
-   1a. Install Python with [Anaconda](https://www.anaconda.com/download).  
-   1b. Use the [Anaconda terminal](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#starting-conda) to run the commands below.
+   If you're not a python expert:  
+   1a. Install Python via [Anaconda](https://www.anaconda.com/download).  
+   1b. Use the [Anaconda terminal](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#starting-conda) to run the commands below.  
+   1c. (Optional) [Create & activate a new Python environment](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#managing-environments).  
+   If the installation (below) fails, try doing step 1c first.
 
 2. **Install**:  
    `$ git clone https://github.com/patricknraanes/Corona.git`  
    `$ pip install -e Corona`  
-   Note: code downloaded as a zip won't install.
+   Note: a zip download (via browser instead of git) won't install.
 
 3. **Test:**  
    `$ cd Corona/src/corona`  
+   `$ python epcalc.py`  
+   You should get output like the figure above.  
+
+PS: personally, I prefer to use ipython:  
    `$ ipython`  
    `In [1]: run epcalc.py`  
-   You should get output like the figure above.
-
-If the installation fails, you probably need to [create & activate a new Python environment](https://docs.conda.io/projects/conda/en/latest/user-guide/getting-started.html#managing-environments).
-
