@@ -81,6 +81,8 @@ colrs = dict(
 
 thousands = mpl.ticker.StrMethodFormatter('{x:,.0f}')
 
+leg_kws = dict(loc="upper left", bbox_to_anchor=(0.1,1), fontsize="8")
+
 def reverse_legend(ax,**kws):
     "Reverse order of legend items in ``ax``."
     leg = ax.get_legend_handles_labels()

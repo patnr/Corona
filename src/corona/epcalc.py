@@ -178,7 +178,6 @@ ax.text(InterventionTime, axY,"Stricter measures", va="top", ha="right",fontsize
 # Adjust plot properties
 ax.set_xlabel('Time (days)')
 # ax.set_ylabel('People')
-leg_kws = dict(loc="upper left", bbox_to_anchor=(0.1,1), fontsize="8")
 ax.legend()
 reverse_legend(ax,**leg_kws)
 # ax.set_ylim(0,9e5)
