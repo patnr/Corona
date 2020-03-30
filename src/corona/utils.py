@@ -90,6 +90,8 @@ def reverse_legend(ax,**kws):
     ax.legend(*zip(*leg),**kws)
 
 
+from matplotlib.widgets import Button, CheckButtons
+
 class StackedBarChart:
     """A bar chart (histogram),
 
@@ -107,7 +109,35 @@ class StackedBarChart:
         t_end = tt_full[-1]
         self.tt = arange(0,t_end,self.dt)
 
+        # Toggle log-scale (button)
+        toggle_ax = ax.figure.add_axes([0.8, 0.8, 0.15, 0.2], frameon=False)
+        self.toggle_log = CheckButtons(toggle_ax, ["Log scale"], [False])
+        # toggle_ax = ax.figure.add_axes([0.8, 0.9, 0.15, 0.05])
+        # self.toggle_log = Button(toggle_ax, 'Toggle scale')
+        self.toggle_log.on_clicked(self.toggle_scale)
+
+        # Highlight bars and add day info in legend
         self.alpha = .65
+        ax.figure.canvas.mpl_connect('pick_event', self.onpick)
+
+        # Adjust plot properties
+        ax.set_xlabel('Time (days)')
+        # ax.set_ylabel('People')
+        # ax.set_ylim(0,9e5)
+        ax.set_xlim(0,t_end)
+
+        # More adjustments:
+        for edge in ["right","left","top"]:
+            ax.spines[edge].set_visible(False)
+        ax.grid(axis="y",ls="--",alpha=0.2, color="k")
+        ax.yaxis.set_major_formatter(thousands)
+        ax.tick_params(axis="y",pad=-1,length=0)
+        ax.tick_params(axis="both",labelsize="small")
+        plt.setp(ax.get_yticklabels(), ha="left", va="bottom")
+        # Would have to use axisartist for access to set_va, set_ha.
+
+        try:    __IPYTHON__
+        except: plt.show(block=True)
 
     def add(self,label):
         # Down-sample (interpolate)
@@ -117,13 +147,16 @@ class StackedBarChart:
         cum = np.sum([y for y in self.stack.values()], 0)
 
         # Plot
-        hh = self.ax.bar(self.tt, yy, .75*self.dt, bottom=cum,
+        hh = self.ax.bar(self.tt, yy, .6*self.dt, bottom=cum,
                 label=label, color=colrs[label],
                 alpha=self.alpha, align="edge",picker=5)
 
         # Append bar heights to stack
         self.handles[label] = hh
         self.stack[label] = yy
+
+        self.ax.legend(**leg_kws)
+        reverse_legend(self.ax,**leg_kws)
 
     def day_index(self,t):      return abs(self.tt      - t).argmin()
     def day_index_full(self,t): return abs(self.tt_full - t).argmin()
@@ -164,6 +197,28 @@ class StackedBarChart:
         time = rectangle.xy[0]
         self.set_legend_for_day(time)
         self.set_alpha_for_day(time)
+
+    def toggle_scale(self,_):
+        # Get current status
+        if isinstance(self.toggle_log, mpl.widgets.Button):
+            log_is_on = getattr(self,"_log_is_on",False)
+            self._log_is_on = not log_is_on
+        elif isinstance(self.toggle_log, mpl.widgets.CheckButtons):
+            log_is_on = not self.toggle_log.get_status()[0]
+        else: raise TypeError
+
+        # Toggle
+        if log_is_on:
+            self.ax.set_yscale("linear")
+            self.ax.yaxis.set_major_formatter(thousands)
+        else:
+            self.ax.set_yscale("log")
+            f = mpl.ticker.FuncFormatter(lambda y, _: '{:g}'.format(y))
+            self.ax.yaxis.set_major_formatter(f)
+        plt.draw()
+
+
+
 
 
 def rk4(f, x, t, dt, order=4):

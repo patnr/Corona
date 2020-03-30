@@ -160,11 +160,11 @@ barchart.add("Hospitalized")
 barchart.add("Infected")
 barchart.add("Exposed")
 # barchart.add("Susceptible")
-fig.canvas.mpl_connect('pick_event', barchart.onpick)
+
 
 # Plot number of respirators
 # nrk.no/vestland/mener-helsemyndighetene-overdriver-intensivkapasiteten-i-norge-1.14938514
-nRespirators = 10000
+nRespirators = 2000
 ax.plot([0,t_end], 2*[nRespirators],"k--",lw=1,label="_nolegend_")
 # ax.text(t_end, nRespirators,"Num. of respirators", va="bottom", ha="right",fontsize="small")
 ax.text(0, nRespirators,"Num. of respirators", va="bottom", fontsize="small")
@@ -174,27 +174,6 @@ axY = ax.get_ylim()[1]
 ax.plot(2*[InterventionTime], [0,axY], "k--", lw=1,label="_nolegend_")
 ax.text(InterventionTime, axY,"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
 
-# Adjust plot properties
-ax.set_xlabel('Time (days)')
-# ax.set_ylabel('People')
-ax.legend()
-reverse_legend(ax,**leg_kws)
-# ax.set_ylim(0,9e5)
-ax.set_xlim(0,t_end)
-
-# More adjustments:
-for edge in ["right","left","top"]:
-    ax.spines[edge].set_visible(False)
-ax.grid(axis="y",ls="--",alpha=0.2, color="k")
-ax.yaxis.set_major_formatter(thousands)
-ax.tick_params(axis="y",pad=-1,length=0)
-ax.tick_params(axis="both",labelsize="small")
-_ = ax.get_yticklabels()
-plt.pause(0.1) # avoid disappearing ticks bug
-ax.set_yticklabels(_, ha="left", va="bottom")
-
-try:    __IPYTHON__
-except: plt.show(block=True)
 
 ##
 
