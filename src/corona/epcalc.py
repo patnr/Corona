@@ -40,7 +40,7 @@ for k,t in enumerate(tt):
 xx = model.N * xx
 
 # Facilitate unpacking
-state = model.NamedState(*xx.T)
+state = model.NamedVars(*xx.T)
 
 ## Plot
 fig, ax = freshfig(1)

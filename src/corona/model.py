@@ -4,6 +4,8 @@ which uses a SEIR model elaborated with clinical dynamics.
 """
 from corona.utils import *
 from dataclasses import dataclass
+from collections import namedtuple
+
 
 @dataclass
 class SEIR2:
@@ -43,25 +45,35 @@ class SEIR2:
     @property
     def intervention_multiplier (self): return 1 - self.intervention_efficacy
 
-    @dataclass
-    class NamedState:
-        Susceptible : float = 0
-        Exposed     : float = 0 
-        Infected    : float = 0 
-        I_Mild      : float = 0 
-        I_Sevr      : float = 0 
-        I_Hosp      : float = 0 
-        I_Fatl      : float = 0 
-        R_Mild      : float = 0 
-        R_Sevr      : float = 0 
-        R_Fatl      : float = 0  
-        # Non-prognostic variables:
+
+
+
+
+    NamedState = namedtuple("PrognosticVars",[
+        "Susceptible", 
+        "Exposed", 
+        "Infected", 
+        "I_Mild", 
+        "I_Sevr", 
+        "I_Hosp", 
+        "I_Fatl", 
+        "R_Mild", 
+        "R_Sevr", 
+        "R_Fatl", 
+        ])
+    # Add diagnostic (non-prognostic) variables:
+    class NamedVars(NamedState):
         @property
         def Hospitalized(self): return self.I_Hosp + self.I_Fatl
         @property
         def Recovered(self): return self.R_Mild + self.R_Sevr
         @property
         def Fatalities(self): return self.R_Fatl
+
+
+
+
+
 
     def step(self,x,t,dt):
         return rk4(self.dxdt, x, t, dt)
