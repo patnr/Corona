@@ -8,27 +8,27 @@ from collections import namedtuple
 
 @dcs.dataclass
 class SEIR2:
-    # Params -- Transmission dynamics
+    # Params -- SEI (transmission dynamics)
     Rep          : float = 2.2 # Reproduction number
-    D_infectious : float = 2.9 # Infection dt (mean)
+    # Timescales, where dt_X is the "mean" duration spent in state X.
     D_incbation  : float = 5.2 # Incubation dt
+    D_infectious : float = 2.9 # Infection dt
 
-    # Params -- Clinical dynamics
+    # Params -- IQR (clinical dynamics)
+    # Proportions
+    pDead             : float = 0.02  # Case fatality rate (CFR)
+    pSevr             : float = 0.2   # Hospitalization
+    # Note: Some of these timescales get compensated for previous states.
     Time_to_death     : float = 32    # Death
     D_recovery_mild   : float = 14    # Recovery mild
     D_recovery_severe : float = 31.5  # Recovery severe
-    D_hospital_lag    : float = 5     # Hospitalization
-
-    # Proportions
-    pDead : float = 0.02  # Case fatality rate (CFR)
-    pSevr : float = 0.2   # Hospitalization
+    D_hospital_lag    : float = 5     # Time to hospitalization
 
     # Intervention params
     intervention_efficacy : float = 2/3 # slider parameter
     intervention_time     : float = 100 # day of stricter measures
 
     def __post_init__(self):
-        # dt_X: "Mean" durations spent in a state X
 
         # Aliases
         self.dt_I = self.D_infectious
@@ -38,11 +38,11 @@ class SEIR2:
         # a    :=   1/dt_E : "Incubation rate"
         # gamma:=   1/dt_I : "Recovery rate"
 
-        # Corrections
+        # Corrections and aliases
         self.dt_mild = self.D_recovery_mild   - self.dt_I
-        self.dt_sevr = self.D_recovery_severe - self.dt_I
         self.dt_fatl = self.Time_to_death     - self.dt_I
-        self.dt_hosp = self.D_hospital_lag # Alias
+        self.dt_hosp = self.D_hospital_lag
+        self.dt_sevr = self.D_recovery_severe - self.dt_I
 
     @property
     def pMild(self): return 1 - self.pSevr - self.pDead
