@@ -11,6 +11,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   todo
    License <license>
    Authors <authors>
    Changelog <changelog>
