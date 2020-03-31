@@ -13,8 +13,9 @@ from corona.model import *
 from corona.plotting import *
 
 ## Params
-# model = SEIR2()
-model = SEIR2(Rep=3)
+
+# model = SEIR2(Rep=3)
+model = SEIR2()
 
 # Population size
 N = 7*10**6
@@ -27,10 +28,9 @@ tt = linspace(0, t_end, int(t_end/dt)+1)
 ## Integrate
 x0 = model.init_state(Infected=1/N)
 xx = zeros(tt.shape+x0.shape)
-with Timer():
-    for k,t in enumerate(tt):
-        if k: xx[k] = model.step(xx[k-1], t, t-tt[k-1])
-        else: xx[k] = x0
+for k,t in enumerate(tt):
+    if k: xx[k] = model.step(xx[k-1], t, t-tt[k-1])
+    else: xx[k] = x0
 
 # from scipy.integrate import odeint
 # xx = odeint(model.dxdt, x0, tt)

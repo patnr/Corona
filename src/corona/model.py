@@ -48,7 +48,7 @@ class SEIR2:
     # Use namedtuple to unpack state variables.
     # Q: Why not just list them as args to dxdt?
     # A: Make them accessible outside.
-    # Note: dataclasses tests were far too slow.
+    # Note: using dataclasses was far too slow.
     NamedState = namedtuple("PrognosticVars",[
         "Susceptible",  # [0]
         "Exposed"    ,  # [1]

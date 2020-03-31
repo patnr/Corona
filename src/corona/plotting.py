@@ -40,6 +40,8 @@ colrs = dict(
 
 thousands = mpl.ticker.StrMethodFormatter('{x:,.7g}')
 
+
+
 leg_kws = dict(loc="upper left", bbox_to_anchor=(0.1,1), fontsize="8")
 
 def reverse_legend(ax,**kws):
@@ -176,5 +178,3 @@ class StackedBarChart:
         time = rectangle.xy[0]
         self.set_legend_for_day(time)
         self.set_alpha_for_day(time)
-
-
