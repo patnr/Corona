@@ -38,11 +38,11 @@ for k,t in enumerate(tt):
 # Multiply by population
 xx = N * xx
 
-# Facilitate unpacking
-state = model.NamedVars(*xx.T)
 
 ## Plot
 fig, ax = freshfig(1)
+
+state = model.NamedVars(*xx.T)
 
 # Normal plot:
 # # lbl='Susceptible'; ax.plot(tt, getattr(state,lbl), label=lbl, c=colrs[lbl])
@@ -52,8 +52,8 @@ fig, ax = freshfig(1)
 
 # Barchart:
 barchart = StackedBarChart(ax,state,tt)
-# barchart.add("Fatalities")
 barchart.add("Hospitalized")
+barchart.add("Fatalities")
 # barchart.add("Recovered")
 barchart.add("Infected")
 barchart.add("Exposed")
