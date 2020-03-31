@@ -10,20 +10,22 @@ which uses a SEIR model elaborated with clinical dynamics.
 ## Imports
 from corona.utils import *
 from corona.model import *
+from corona.plotting import *
 
-## Model
-model = SEIR2()
+## Params
+# model = SEIR2()
+model = SEIR2(Rep=3)
 
-# Total population
+# Population size
 N = 7*10**6
 
-# Time params
-t_end = 200 # days
+# Time -- unit: days
+t_end = 200
 dt = 0.1
 tt = linspace(0, t_end, int(t_end/dt)+1)
 
 ## Integrate
-x0 = model.NamedState(Infected=1/N).asarray()
+x0 = model.init_state(Infected=1/N)
 xx = zeros(tt.shape+x0.shape)
 with Timer():
     for k,t in enumerate(tt):
@@ -37,26 +39,27 @@ with Timer():
 xx = N * xx
 
 # Facilitate unpacking
-state = model.NamedState(*xx.T)
+state = model.NamedVars(*xx.T)
 
 ## Plot
 fig, ax = freshfig(1)
 
 # Normal plot:
-# lbl='Susceptible'; ax.plot(tt, state.Susceptible, label=lbl, c=colrs[lbl])
-# lbl='Exposed'    ; ax.plot(tt, state.Exposed, label=lbl, c=colrs[lbl])
-# lbl='Infected'   ; ax.plot(tt, state.Infected, label=lbl, c=colrs[lbl])
+# # lbl='Susceptible'; ax.plot(tt, getattr(state,lbl), label=lbl, c=colrs[lbl])
+# lbl='Exposed'    ; ax.plot(tt, getattr(state,lbl), label=lbl, c=colrs[lbl])
+# lbl='Infected'   ; ax.plot(tt, getattr(state,lbl), label=lbl, c=colrs[lbl])
 
 
 # Barchart:
 barchart = StackedBarChart(ax,state,tt)
-barchart.add("Fatalities")
+# barchart.add("Fatalities")
 barchart.add("Hospitalized")
 # barchart.add("Recovered")
 barchart.add("Infected")
 barchart.add("Exposed")
 # barchart.add("Susceptible")
 
+add_log_toggler(ax)
 
 # Plot number of respirators
 # nrk.no/vestland/mener-helsemyndighetene-overdriver-intensivkapasiteten-i-norge-1.14938514

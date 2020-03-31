@@ -45,50 +45,56 @@ class SEIR2:
 
 
 
-    @dcs.dataclass
-    class NamedState:
-        Susceptible : float = 0
-        Exposed     : float = 0 
-        Infected    : float = 0 
-        I_mild      : float = 0 
-        I_sevr      : float = 0 
-        I_hosp      : float = 0 
-        I_fatl      : float = 0 
-        R_mild      : float = 0 
-        R_sevr      : float = 0 
-        R_fatl      : float = 0  
-        # Non-prognostic variables:
+    # Use namedtuple to unpack state variables.
+    # Q: Why not just list them as args to dxdt?
+    # A: Make them accessible outside.
+    # Note: dataclasses tests were far too slow.
+    NamedState = namedtuple("PrognosticVars",[
+        "Susceptible",  # [0]
+        "Exposed"    ,  # [1]
+        "Infected"   ,  # [2]
+        # Infected subgroups
+        "I_mild"     ,  # [3]
+        "I_sevr"     ,  # [4]
+        "I_hosp"     ,  # [5]
+        "I_fatl"     ,  # [6]
+        # Recovered subgroups
+        "R_mild"     ,  # [7]
+        "R_sevr"     ,  # [8]
+        "R_fatl"     ,  # [9]
+        ])
+    # Add diagnostic (non-prognostic) variables:
+    class NamedVars(NamedState):
         @property
         def Hospitalized(self): return self.I_hosp + self.I_fatl
         @property
         def Recovered(self): return self.R_mild + self.R_sevr
         @property
         def Fatalities(self): return self.R_fatl
-        # Convenience:
-        def __post_init__(self):
-            complement = [v for k,v in dcs.asdict(self).items() if k!="Susceptible"]
-            self.Susceptible = 1 - sum(complement)
-        def asarray(self):
-            return np.asarray(dcs.astuple(self))
-
-
+    # Convenience:
+    def init_state(self,**kwargs):
+        """Init with kwargs and set susceptible = 1-everything_else."""
+        x = {**{k:0 for k in self.NamedState._fields}, **kwargs}
+        x = np.array(list(x.values()))
+        x[0] = 1 - sum(x[1:])
+        return x
 
 
 
 
     def step(self,x,t,dt):
+        "Integrate dxdt over dt."
         return rk4(self.dxdt, x, t, dt)
 
     # @ens_compatible
     def dxdt(self, state, t):
+        "Dynamics."
         x = self.NamedState(*state)
 
         # Proxy params
         beta  = self.Rep/(self.D_infectious) # Contact rate
         a     = 1/self.D_incbation           # Incubation rate
         gamma = 1/self.D_infectious          # Recovery rate (in people/days)
-
-        Susceptible,Exposed,Infected,  I_mild,I_sevr,I_hosp,I_fatl,  R_mild,R_sevr,R_fatl   =   state
 
         # Switch case
         b = beta
@@ -97,9 +103,9 @@ class SEIR2:
 
         # SEIR
         # Fluxes
-        S2E = b*x.Susceptible*Infected
-        E2I = a*Exposed
-        I2R = gamma*Infected
+        S2E = b*x.Susceptible*x.Infected
+        E2I = a*x.Exposed
+        I2R = gamma*x.Infected
         # Changes (for each compartment)
         dS = -S2E
         dE = +S2E - E2I
@@ -108,19 +114,19 @@ class SEIR2:
 
         # Clinical dynamics
         # Fluxes to recovery (or death)
-        dIR_Mild = I_mild / self.D_recovery_mild
-        dIR_Sevr = I_sevr / self.D_hospital_lag 
-        dIR_Dead = I_fatl / self.D_death        
+        dIR_mild = x.I_mild / self.D_recovery_mild
+        dIR_sevr = x.I_sevr / self.D_hospital_lag 
+        dIR_dead = x.I_fatl / self.D_death        
         # Changes to Infected
-        dMild   = self.pMild*I2R - dIR_Mild
-        dSevr   = self.pSevr*I2R - dIR_Sevr
-        dFatal  = self.pDead*I2R - dIR_Dead
+        d_mild = self.pMild*I2R - dIR_mild
+        d_sevr = self.pSevr*I2R - dIR_sevr
+        d_fatl = self.pDead*I2R - dIR_dead
         # Hospitalized
-        dSevr_H = (1/self.D_hospital_lag)*I_sevr - (1/self.D_recovery_severe)*I_hosp
+        d_hosp = (1/self.D_hospital_lag)*x.I_sevr - (1/self.D_recovery_severe)*x.I_hosp
 
         # RecoverED (or dead)
-        dR_Mild   = +dIR_Mild
-        dR_Sevr   = +dIR_Sevr
-        dR_Fatal  = +dIR_Dead
+        dR_mild = +dIR_mild
+        dR_sevr = +dIR_sevr
+        dR_fatl = +dIR_dead
 
-        return np.asarray([dS, dE, dI, dMild, dSevr, dSevr_H, dFatal, dR_Mild, dR_Sevr, dR_Fatal])
+        return np.asarray([dS, dE, dI, d_mild, d_sevr, d_hosp, d_fatl, dR_mild, dR_sevr, dR_fatl])
