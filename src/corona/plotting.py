@@ -141,7 +141,7 @@ class StackedBarChart:
         # Plot
         hh = self.ax.bar(self.tt, yy, .6*self.dt, bottom=cum,
                 label=label, color=colrz(label),
-                alpha=self.alpha, align="edge",picker=5)
+                alpha=self.alpha, align="edge",picker=1)
 
         # Append bar heights to stack
         self.handles[label] = hh
