@@ -14,33 +14,30 @@ from corona.model import *
 ## Model
 model = SEIR2()
 
-## Integrate
-
-## Initial conditions, x0
-x0 = zeros(10)
-x0[1] = 0           # Exposed
-x0[2] = 1/model.N   # Infected
-x0[3] = 0           # Recovered
-x0[0] = 1 - sum(x0) # Susceptible
+# Total population
+N = 7*10**6
 
 # Time params
 t_end = 200 # days
 dt = 0.1
 tt = linspace(0, t_end, int(t_end/dt)+1)
 
+## Integrate
+x0 = model.NamedState(Infected=1/N).asarray()
 xx = zeros(tt.shape+x0.shape)
-for k,t in enumerate(tt):
-    if k: xx[k] = model.step(xx[k-1], t, t-tt[k-1])
-    else: xx[k] = x0
+with Timer():
+    for k,t in enumerate(tt):
+        if k: xx[k] = model.step(xx[k-1], t, t-tt[k-1])
+        else: xx[k] = x0
 
 # from scipy.integrate import odeint
 # xx = odeint(model.dxdt, x0, tt)
 
 # Multiply by population
-xx = model.N * xx
+xx = N * xx
 
 # Facilitate unpacking
-state = model.NamedVars(*xx.T)
+state = model.NamedState(*xx.T)
 
 ## Plot
 fig, ax = freshfig(1)

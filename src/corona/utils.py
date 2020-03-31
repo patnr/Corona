@@ -9,7 +9,7 @@ import os
 import time
 # import re
 # import builtins
-# import dataclasses as dcs
+import dataclasses as dcs
 # from typing import Optional, Any
 
 
@@ -270,3 +270,26 @@ def round2sigfig(num,nfig=1):
     nfig =nfig-1
     n    = nfig + ndecimal(num)
     return np.round(num, n) # n specified => float (always)
+
+
+
+import time
+class Timer():
+    """Timer.
+
+    Example::
+
+      with Timer('<description>'):
+        do_stuff()
+    """
+    def __init__(self, name=None):
+        self.name = name
+
+    def __enter__(self):
+        self.tstart = time.time()
+
+    def __exit__(self, type, value, traceback):
+        #pass # Turn off timer messages
+        if self.name:
+            print('[%s]' % self.name, end='')
+        print('Elapsed: %s' % (time.time() - self.tstart))

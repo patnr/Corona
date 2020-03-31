@@ -3,15 +3,11 @@
 which uses a SEIR model elaborated with clinical dynamics.
 """
 from corona.utils import *
-from dataclasses import dataclass
 from collections import namedtuple
 
 
-@dataclass
+@dcs.dataclass
 class SEIR2:
-    # Total population
-    N : int = 7*10**6
-
     # Params -- Transmission dynamics
     Rep          : float = 2.2 # Reproduction number
     D_infectious : float = 2.9 # Infection dt (mean)
@@ -40,6 +36,7 @@ class SEIR2:
         self.D_recovery_mild   -= self.D_infectious
         self.D_recovery_severe -= self.D_infectious
         self.D_death           -= self.D_infectious
+
     @property
     def pMild(self): return 1 - self.pSevr - self.pDead
     @property
@@ -48,27 +45,31 @@ class SEIR2:
 
 
 
-
-    NamedState = namedtuple("PrognosticVars",[
-        "Susceptible", 
-        "Exposed", 
-        "Infected", 
-        "I_Mild", 
-        "I_Sevr", 
-        "I_Hosp", 
-        "I_Fatl", 
-        "R_Mild", 
-        "R_Sevr", 
-        "R_Fatl", 
-        ])
-    # Add diagnostic (non-prognostic) variables:
-    class NamedVars(NamedState):
+    @dcs.dataclass
+    class NamedState:
+        Susceptible : float = 0
+        Exposed     : float = 0 
+        Infected    : float = 0 
+        I_mild      : float = 0 
+        I_sevr      : float = 0 
+        I_hosp      : float = 0 
+        I_fatl      : float = 0 
+        R_mild      : float = 0 
+        R_sevr      : float = 0 
+        R_fatl      : float = 0  
+        # Non-prognostic variables:
         @property
-        def Hospitalized(self): return self.I_Hosp + self.I_Fatl
+        def Hospitalized(self): return self.I_hosp + self.I_fatl
         @property
-        def Recovered(self): return self.R_Mild + self.R_Sevr
+        def Recovered(self): return self.R_mild + self.R_sevr
         @property
-        def Fatalities(self): return self.R_Fatl
+        def Fatalities(self): return self.R_fatl
+        # Convenience:
+        def __post_init__(self):
+            complement = [v for k,v in dcs.asdict(self).items() if k!="Susceptible"]
+            self.Susceptible = 1 - sum(complement)
+        def asarray(self):
+            return np.asarray(dcs.astuple(self))
 
 
 
@@ -80,21 +81,14 @@ class SEIR2:
 
     # @ens_compatible
     def dxdt(self, state, t):
+        x = self.NamedState(*state)
 
         # Proxy params
         beta  = self.Rep/(self.D_infectious) # Contact rate
         a     = 1/self.D_incbation           # Incubation rate
         gamma = 1/self.D_infectious          # Recovery rate (in people/days)
 
-        S,E,I,  IM,IS,ISH,IF,  RM,RS,RF   =   state
-        # IM  // Recovering (Mild)     
-        # IS  // Recovering (Severe at home)
-        # ISH // Recovering (Severe in hospital)
-        # IF  // Recovering (Fatal)
-
-        # RM // Recovered mild
-        # RS // Recovered severe
-        # RF // Fatal
+        Susceptible,Exposed,Infected,  I_mild,I_sevr,I_hosp,I_fatl,  R_mild,R_sevr,R_fatl   =   state
 
         # Switch case
         b = beta
@@ -103,9 +97,9 @@ class SEIR2:
 
         # SEIR
         # Fluxes
-        S2E = b*S*I
-        E2I = a*E
-        I2R = gamma*I
+        S2E = b*x.Susceptible*Infected
+        E2I = a*Exposed
+        I2R = gamma*Infected
         # Changes (for each compartment)
         dS = -S2E
         dE = +S2E - E2I
@@ -114,15 +108,15 @@ class SEIR2:
 
         # Clinical dynamics
         # Fluxes to recovery (or death)
-        dIR_Mild = IM / self.D_recovery_mild
-        dIR_Sevr = IS / self.D_hospital_lag 
-        dIR_Dead = IF / self.D_death        
+        dIR_Mild = I_mild / self.D_recovery_mild
+        dIR_Sevr = I_sevr / self.D_hospital_lag 
+        dIR_Dead = I_fatl / self.D_death        
         # Changes to Infected
         dMild   = self.pMild*I2R - dIR_Mild
         dSevr   = self.pSevr*I2R - dIR_Sevr
         dFatal  = self.pDead*I2R - dIR_Dead
         # Hospitalized
-        dSevr_H = (1/self.D_hospital_lag)*IS - (1/self.D_recovery_severe)*ISH
+        dSevr_H = (1/self.D_hospital_lag)*I_sevr - (1/self.D_recovery_severe)*I_hosp
 
         # RecoverED (or dead)
         dR_Mild   = +dIR_Mild
