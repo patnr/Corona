@@ -37,6 +37,17 @@ colrs = dict(
         Exposed="#fdc086",
         Susceptible="grey",
         )
+import hashlib
+def colrz(component):
+    if component in colrs:
+        c = colrs[component]
+    else:
+        x = str(component).encode() # hashable
+        # HASH = hash(tuple(x)) # Changes randomly each session
+        HASH = int(hashlib.sha1(x).hexdigest(),16)
+        colors = plt.get_cmap('tab20').colors
+        c = colors[HASH%len(colors)]
+    return c
 
 thousands = mpl.ticker.StrMethodFormatter('{x:,.7g}')
 
@@ -129,7 +140,7 @@ class StackedBarChart:
 
         # Plot
         hh = self.ax.bar(self.tt, yy, .6*self.dt, bottom=cum,
-                label=label, color=colrs[label],
+                label=label, color=colrz(label),
                 alpha=self.alpha, align="edge",picker=5)
 
         # Append bar heights to stack
