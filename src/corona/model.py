@@ -41,8 +41,8 @@ class SEIR2:
         # Corrections and aliases
         self.dt_mild = self.D_recovery_mild   - self.dt_I
         self.dt_fatl = self.Time_to_death     - self.dt_I
-        self.dt_hosp = self.D_hospital_lag
-        self.dt_sevr = self.D_recovery_severe - self.dt_I
+        self.dt_sevr = self.D_hospital_lag
+        self.dt_hosp = self.D_recovery_severe - self.dt_I
 
     @property
     def pMild(self): return 1 - self.pSevr - self.pDead
@@ -119,8 +119,8 @@ class SEIR2:
         # Fluxes
         Q2R_mild = x.Q_mild / self.dt_mild
         Q2R_fatl = x.Q_fatl / self.dt_fatl       
-        Q2H      = x.Q_sevr / self.dt_hosp
-        H2R      = x.Q_hosp / self.dt_sevr
+        Q2H      = x.Q_sevr / self.dt_sevr
+        H2R      = x.Q_hosp / self.dt_hosp
         # Changes to Q
         dQ_mild = -Q2R_mild + self.pMild*I2Q 
         dQ_fatl = -Q2R_fatl + self.pDead*I2Q 
