@@ -60,8 +60,7 @@ barchart.add("Exposed")
 
 # # All state variables (Note: sums to 1):
 # for f in state._fields:
-#     if f != "Q_hosp":
-#         barchart.add(f)
+#     barchart.add(f)
 
 
 

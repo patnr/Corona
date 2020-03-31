@@ -118,18 +118,17 @@ class SEIR2:
         # ------ IQR (clinical dynamics) ------
         # Fluxes
         Q2R_mild = x.Q_mild / self.dt_mild
-        Q2R_sevr = x.Q_sevr / self.dt_hosp 
-        Q2R_fatl = x.Q_fatl / self.dt_fatl        
+        Q2R_fatl = x.Q_fatl / self.dt_fatl       
+        Q2H      = x.Q_sevr / self.dt_hosp
+        H2R      = x.Q_hosp / self.dt_sevr
         # Changes to Q
-        dQ_mild = self.pMild*I2Q - Q2R_mild
-        dQ_sevr = self.pSevr*I2Q - Q2R_sevr
-        dQ_fatl = self.pDead*I2Q - Q2R_fatl
+        dQ_mild = -Q2R_mild + self.pMild*I2Q 
+        dQ_fatl = -Q2R_fatl + self.pDead*I2Q 
+        dQ_sevr = -Q2H      + self.pSevr*I2Q 
+        dH      = +Q2H      - H2R
         # Changes to R
         dR_mild = +Q2R_mild
-        dR_sevr = +Q2R_sevr
         dR_fatl = +Q2R_fatl
+        dR_sevr = +H2R
 
-        # Hospitalized
-        d_hosp = x.Q_sevr/self.dt_hosp - x.Q_hosp/self.dt_sevr # NB: wtf
-
-        return np.asarray([dS, dE, dI, dQ_mild, dQ_sevr, d_hosp, dQ_fatl, dR_mild, dR_sevr, dR_fatl])
+        return np.asarray([dS, dE, dI, dQ_mild, dQ_sevr, dH, dQ_fatl, dR_mild, dR_sevr, dR_fatl])
