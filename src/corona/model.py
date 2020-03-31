@@ -14,28 +14,35 @@ class SEIR2:
     D_incbation  : float = 5.2 # Incubation dt
 
     # Params -- Clinical dynamics
-    # Durations:
     Time_to_death     : float = 32    # Death
     D_recovery_mild   : float = 14    # Recovery mild
     D_recovery_severe : float = 31.5  # Recovery severe
     D_hospital_lag    : float = 5     # Hospitalization
-    # Proportions:
-    CFR               : float = 0.02  # Case fatality
-    pSevr             : float = 0.2   # Hospitalization
+
+    # Proportions
+    pDead : float = 0.02  # Case fatality rate (CFR)
+    pSevr : float = 0.2   # Hospitalization
 
     # Intervention params
-    intervention_efficacy : float = 2/3 # "to decrease transmission by"
+    intervention_efficacy : float = 2/3 # slider parameter
     intervention_time     : float = 100 # day of stricter measures
 
     def __post_init__(self):
+        # dt_X: "Mean" durations spent in a state X
+
         # Aliases
-        self.pDead   = self.CFR
-        self.D_death = self.Time_to_death
+        self.dt_I = self.D_infectious
+        self.dt_E = self.D_incbation
+        # Other parameterization: 
+        # beta := Rep/dt_I : "Contact rate" (people/days)
+        # a    :=   1/dt_E : "Incubation rate"
+        # gamma:=   1/dt_I : "Recovery rate"
 
         # Corrections
-        self.D_recovery_mild   -= self.D_infectious
-        self.D_recovery_severe -= self.D_infectious
-        self.D_death           -= self.D_infectious
+        self.dt_mild = self.D_recovery_mild   - self.dt_I
+        self.dt_sevr = self.D_recovery_severe - self.dt_I
+        self.dt_fatl = self.Time_to_death     - self.dt_I
+        self.dt_hosp = self.D_hospital_lag # Alias
 
     @property
     def pMild(self): return 1 - self.pSevr - self.pDead
@@ -54,10 +61,10 @@ class SEIR2:
         "Exposed"    ,  # [1]
         "Infected"   ,  # [2]
         # Infected subgroups
-        "I_mild"     ,  # [3]
-        "I_sevr"     ,  # [4]
-        "I_hosp"     ,  # [5]
-        "I_fatl"     ,  # [6]
+        "Q_mild"     ,  # [3]
+        "Q_sevr"     ,  # [4]
+        "Q_hosp"     ,  # [5]
+        "Q_fatl"     ,  # [6]
         # Recovered subgroups
         "R_mild"     ,  # [7]
         "R_sevr"     ,  # [8]
@@ -66,7 +73,7 @@ class SEIR2:
     # Add diagnostic (non-prognostic) variables:
     class NamedVars(NamedState):
         @property
-        def Hospitalized(self): return self.I_hosp + self.I_fatl
+        def Hospitalized(self): return self.Q_hosp + self.Q_fatl
         @property
         def Recovered(self): return self.R_mild + self.R_sevr
         @property
@@ -91,42 +98,38 @@ class SEIR2:
         "Dynamics."
         x = self.NamedState(*state)
 
-        # Proxy params
-        beta  = self.Rep/(self.D_infectious) # Contact rate
-        a     = 1/self.D_incbation           # Incubation rate
-        gamma = 1/self.D_infectious          # Recovery rate (in people/days)
-
-        # Switch case
-        b = beta
+        # ------ Intervention switch ------
         if t>self.intervention_time:
-            b *= self.intervention_multiplier
+            xRep = self.intervention_multiplier
+        else:
+            xRep = 1
 
-        # SEIR
+        # ------ SEI (transmission dynamics) ------
         # Fluxes
-        S2E = b*x.Susceptible*x.Infected
-        E2I = a*x.Exposed
-        I2R = gamma*x.Infected
-        # Changes (for each compartment)
+        S2E = x.Susceptible * x.Infected / self.dt_I * self.Rep * xRep
+        E2I = x.Exposed                  / self.dt_E
+        I2Q = x.Infected                 / self.dt_I
+        # Changes
         dS = -S2E
         dE = +S2E - E2I
-        dI = -I2R + E2I
-        dR = +I2R # proxy var
+        dI = -I2Q + E2I
+        # dR = +I2Q
 
-        # Clinical dynamics
-        # Fluxes to recovery (or death)
-        dIR_mild = x.I_mild / self.D_recovery_mild
-        dIR_sevr = x.I_sevr / self.D_hospital_lag 
-        dIR_dead = x.I_fatl / self.D_death        
-        # Changes to Infected
-        d_mild = self.pMild*I2R - dIR_mild
-        d_sevr = self.pSevr*I2R - dIR_sevr
-        d_fatl = self.pDead*I2R - dIR_dead
+        # ------ IQR (clinical dynamics) ------
+        # Fluxes
+        Q2R_mild = x.Q_mild / self.dt_mild
+        Q2R_sevr = x.Q_sevr / self.dt_hosp 
+        Q2R_fatl = x.Q_fatl / self.dt_fatl        
+        # Changes to Q
+        dQ_mild = self.pMild*I2Q - Q2R_mild
+        dQ_sevr = self.pSevr*I2Q - Q2R_sevr
+        dQ_fatl = self.pDead*I2Q - Q2R_fatl
+        # Changes to R
+        dR_mild = +Q2R_mild
+        dR_sevr = +Q2R_sevr
+        dR_fatl = +Q2R_fatl
+
         # Hospitalized
-        d_hosp = (1/self.D_hospital_lag)*x.I_sevr - (1/self.D_recovery_severe)*x.I_hosp
+        d_hosp = x.Q_sevr/self.dt_hosp - x.Q_hosp/self.dt_sevr # NB: wtf
 
-        # RecoverED (or dead)
-        dR_mild = +dIR_mild
-        dR_sevr = +dIR_sevr
-        dR_fatl = +dIR_dead
-
-        return np.asarray([dS, dE, dI, d_mild, d_sevr, d_hosp, d_fatl, dR_mild, dR_sevr, dR_fatl])
+        return np.asarray([dS, dE, dI, dQ_mild, dQ_sevr, d_hosp, dQ_fatl, dR_mild, dR_sevr, dR_fatl])

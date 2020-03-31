@@ -58,10 +58,10 @@ barchart.add("Infected")
 barchart.add("Exposed")
 # barchart.add("Susceptible")
 
-# All state variables:
-# TODO: this does not sum to 1!
+# # All state variables (Note: sums to 1):
 # for f in state._fields:
-    # barchart.add(f)
+#     if f != "Q_hosp":
+#         barchart.add(f)
 
 
 
