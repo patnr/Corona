@@ -3,7 +3,7 @@
 which uses a SEIR model elaborated with clinical dynamics.
 """
 from corona.utils import *
-from collections import namedtuple
+from corona.maths import *
 
 
 @dcs.dataclass

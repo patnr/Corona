@@ -6,6 +6,7 @@ which uses a SEIR model elaborated with clinical dynamics.
 
 ## Imports
 from corona.utils import *
+from corona.maths import *
 from corona.model import *
 from corona.plotting import *
 
@@ -29,8 +30,7 @@ for k,t in enumerate(tt):
     if k: xx[k] = model.step(xx[k-1], t, t-tt[k-1])
     else: xx[k] = x0
 
-# from scipy.integrate import odeint
-# xx = odeint(model.dxdt, x0, tt)
+# xx = scipy.integrate.odeint(model.dxdt, x0, tt)
 
 # Multiply by population
 xx = nPop * xx

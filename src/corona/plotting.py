@@ -1,6 +1,8 @@
 """Plotting tools.
 """
 from corona.utils import *
+from corona.maths import *
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt 
 plt.ion()
