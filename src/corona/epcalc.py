@@ -4,8 +4,6 @@
 which uses a SEIR model elaborated with clinical dynamics.
 """
 
-# TODO: make SEIRS
-
 ## Imports
 from corona.utils import *
 from corona.model import *
