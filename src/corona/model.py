@@ -9,30 +9,29 @@ from collections import namedtuple
 @dcs.dataclass
 class SEIR2:
     # Params -- SEI (transmission dynamics)
-    Rep          : float = 2.2 # Reproduction number
+    Rep                   : float = 2.2 # Reproduction number
+    # Intervention
+    intervention_efficacy : float = 2/3 # slider parameter
+    intervention_time     : float = 100 # day of stricter measures
     # Timescales, where dt_X is the "mean" duration spent in state X.
-    D_incbation  : float = 5.2 # Incubation dt
-    D_infectious : float = 2.9 # Infection dt
+    D_incbation           : float = 5.2 # dt in Incubation (but not yet infect./sympt.)
+    D_infectious          : float = 2.9 # dt in Infection (but not yet quaranteed)
 
     # Params -- IQR (clinical dynamics)
     # Proportions
     pDead             : float = 0.02  # Case fatality rate (CFR)
     pSevr             : float = 0.2   # Hospitalization
-    # Note: Some of these timescales get compensated for previous states.
-    Time_to_death     : float = 32    # Death
-    D_recovery_mild   : float = 14    # Recovery mild
-    D_recovery_severe : float = 31.5  # Recovery severe
-    D_hospital_lag    : float = 5     # Time to hospitalization
-
-    # Intervention params
-    intervention_efficacy : float = 2/3 # slider parameter
-    intervention_time     : float = 100 # day of stricter measures
+    # Timescales, from (start of) Infectious symptomatic to (end of) X:
+    Time_to_death     : float = 32    # TS from symptomatic to death
+    D_recovery_mild   : float = 14    # TS from symptomatic to recovery -- mild
+    D_hospital_lag    : float = 5     # TS from symptomatic to hospitalization
+    D_recovery_severe : float = 31.5  # TS from symptomatic to recovery -- severe
 
     def __post_init__(self):
 
         # Aliases
-        self.dt_I = self.D_infectious
         self.dt_E = self.D_incbation
+        self.dt_I = self.D_infectious
         # Other parameterization: 
         # beta := Rep/dt_I : "Contact rate" (people/days)
         # a    :=   1/dt_E : "Incubation rate"
@@ -41,8 +40,8 @@ class SEIR2:
         # Corrections and aliases
         self.dt_mild = self.D_recovery_mild   - self.dt_I
         self.dt_fatl = self.Time_to_death     - self.dt_I
-        self.dt_sevr = self.D_hospital_lag
-        self.dt_hosp = self.D_recovery_severe - self.dt_I
+        self.dt_sevr = self.D_hospital_lag    - self.dt_I
+        self.dt_hosp = self.D_recovery_severe - self.dt_I - self.dt_sevr
 
     @property
     def pMild(self): return 1 - self.pSevr - self.pDead
@@ -118,7 +117,7 @@ class SEIR2:
         # ------ IQR (clinical dynamics) ------
         # Fluxes
         Q2R_mild = x.Q_mild / self.dt_mild
-        Q2R_fatl = x.Q_fatl / self.dt_fatl       
+        Q2R_fatl = x.Q_fatl / self.dt_fatl
         Q2H      = x.Q_sevr / self.dt_sevr
         H2R      = x.Q_hosp / self.dt_hosp
         # Changes to Q
