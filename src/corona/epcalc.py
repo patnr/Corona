@@ -15,7 +15,7 @@ from corona.plotting import *
 model = SEIR2()
 
 # Population size
-N = 7*10**6
+nPop = 7*10**6
 
 # Time -- unit: days
 t_end = 200
@@ -23,7 +23,7 @@ dt = 0.1
 tt = linspace(0, t_end, int(t_end/dt)+1)
 
 ## Integrate
-x0 = model.init_state(Infected=1/N)
+x0 = model.init_state(Infected=1/nPop)
 xx = zeros(tt.shape+x0.shape)
 for k,t in enumerate(tt):
     if k: xx[k] = model.step(xx[k-1], t, t-tt[k-1])
@@ -33,7 +33,7 @@ for k,t in enumerate(tt):
 # xx = odeint(model.dxdt, x0, tt)
 
 # Multiply by population
-xx = N * xx
+xx = nPop * xx
 
 
 ## Plot
