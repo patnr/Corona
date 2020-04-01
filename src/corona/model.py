@@ -73,6 +73,8 @@ class SEIR2:
         x = np.array(list(x.values()))
         x[0] = 1 - sum(x[1:])
         return x
+    def iVar(self,var_name):
+        return self.NamedState._fields.index(var_name)
 
 
 
@@ -81,10 +83,9 @@ class SEIR2:
         "Integrate dxdt over dt."
         return rk4(self.dxdt, x, t, dt)
 
-    # @ens_compatible # and rm asarray in output
     def dxdt(self, state, t):
         "Dynamics."
-        x = self.NamedState(*state)
+        x = self.NamedState(*state.T)
 
         # ------ Intervention switch ------
         if t>self.intervention_time:
@@ -119,4 +120,4 @@ class SEIR2:
         dR_fatl = +Q2R_fatl
         dR_sevr = +H2R
 
-        return np.asarray([dS, dE, dI, dQ_mild, dQ_sevr, dH, dQ_fatl, dR_mild, dR_sevr, dR_fatl])
+        return np.asarray([dS, dE, dI, dQ_mild, dQ_sevr, dH, dQ_fatl, dR_mild, dR_sevr, dR_fatl]).T

@@ -15,7 +15,6 @@ import dataclasses as dcs
 
 import numpy as np
 import scipy as sp
-import numpy.random
 import scipy.linalg as sla
 import numpy.linalg as nla
 import scipy.stats as ss
@@ -36,6 +35,8 @@ from numpy import \
     eye, zeros, ones, diag, trace \
     # Don't shadow builtins: sum, max, abs, round, pow
 
+from numpy.random import rand, randn
+
 np.set_printoptions(suppress=True,threshold=200,precision=6)
 # Instead of set_np_linewidth, just let terminal do wrapping:
 np.set_printoptions(linewidth=9999)
@@ -55,24 +56,6 @@ def rk4(f, x, t, dt, order=4):
     elif  order ==3: return x + (k1 + 4*k2 + k3)/6
     elif  order ==4: return x + (k1 + 2*(k2 + k3) + k4)/6
     else: raise NotImplementedError
-
-
-import functools
-def ens_compatible(func):
-    """Tranpose before and after.
-
-    Helpful to make functions compatible with both 1d and 2d ndarrays.
-
-    An older version also used np.atleast_2d and squeeze(),
-    but that is more messy than necessary.
-
-    Note: this is not the_way™ -- other tricks are sometimes more practical.
-    See for example core.py:dxdt() of LorenzUV, Lorenz96, LotkaVolterra.
-    """
-    @functools.wraps(func)
-    def wrapr(x,*args,**kwargs):
-        return np.asarray(func(x.T,*args,**kwargs)).T
-    return wrapr
 
 
 
