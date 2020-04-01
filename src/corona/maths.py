@@ -46,7 +46,14 @@ def rk4(f, x, t, dt, order=4):
     else: raise NotImplementedError
 
 
-
+def integrate(f, x0, tt):
+    "Integrate f(x,t) over tt."
+    xx = zeros(tt.shape+x0.shape)
+    xx[0] = x0
+    for k,t in enumerate(tt[:-1]):
+        dt = tt[k+1] - t
+        xx[k+1] = rk4(f, xx[k], t+dt, dt)
+    return xx
 
 
 def round2sigfig(num,nfig=1):

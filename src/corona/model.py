@@ -77,12 +77,6 @@ class SEIR2:
         return self.NamedState._fields.index(var_name)
 
 
-
-
-    def step(self,x,t,dt):
-        "Integrate dxdt over dt."
-        return rk4(self.dxdt, x, t, dt)
-
     def dxdt(self, state, t):
         "Dynamics."
         x = self.NamedState(*state.T)
