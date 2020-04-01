@@ -9,13 +9,13 @@ from corona.maths import *
 @dcs.dataclass
 class SEIR2:
     # ------ Params SEI (transmission dynamics) ------
-    Rep                   : float = 2.2 # Reproduction number
+    Rep             : float = 2.2 # Reproduction number
     # Intervention
-    intervention_efficacy : float = 2/3 # GUI slider parameter
-    intervention_time     : float = 100 # Day of stricter measures
+    intervention_eff: float = 2/3 # GUI slider parameter
+    t_intervention  : float = 100 # Day of stricter measures
     # Timescales, where dt_X is the "mean" duration spent in state X.
-    dt_E                  : float = 5.2 # Incubation (but not yet infect./sympt.)
-    dt_I                  : float = 2.9 # Infection (but not yet quaranteed)
+    dt_E            : float = 5.2 # Incubation (but not yet infect./sympt.)
+    dt_I            : float = 2.9 # Infection (but not yet quaranteed)
     # Alternative parameterization: 
     # beta  := Rep/dt_I : "Contact rate" (people/days)
     # a     :=   1/dt_E : "Incubation rate"
@@ -28,11 +28,11 @@ class SEIR2:
     @property               # Proportions must sum to 1, so:
     def pMild(self): return 1 - self.pSevr - self.pDead
 
-    # Timescales
-    dt_Q_fatl : float = 32   - 2.9
-    dt_Q_mild : float = 14   - 2.9
-    dt_Q_sevr : float = 5
-    dt_H      : float = 31.5 - 2.9
+    # Timescales, where dt_X is the "mean" duration spent in state X.
+    dt_Q_mild : float = 14   - 2.9 # dt to recovery -- mild (since quarantine)
+    dt_Q_fatl : float = 32   - 2.9 # dt to fatality         (since quarantine)
+    dt_Q_sevr : float = 5          # dt to hospitalization  (since quarantine)
+    dt_H      : float = 31.5 - 2.9 # dt to recovery (sevr)  (since hospitalization)
     # Note: gabgoh doesn't do dt_Q_sevr-=dt_I, nor dt_H-=(dt_I+dt_Q_sevr),
     #       which I think is wrong (from his definition of the timescales,
     #       which start from "showing symptoms").
@@ -82,8 +82,8 @@ class SEIR2:
         x = self.NamedState(*state.T)
 
         # ------ Intervention switch ------
-        if t>self.intervention_time:
-            xRep = 1 - self.intervention_efficacy
+        if t>self.t_intervention:
+            xRep = 1 - self.intervention_eff
         else:
             xRep = 1
 

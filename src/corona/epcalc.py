@@ -20,8 +20,8 @@ nPop = 7*10**6
 
 # Time -- unit: days
 t_end = 200
-dt = 0.1
-tt = linspace(0, t_end, int(t_end/dt)+1)
+dt    = 0.1
+tt    = linspace(0 , t_end , int(t_end/dt)+1)
 
 ## Integrate
 x0 = model.init_state(Infected=1/nPop)
@@ -69,5 +69,5 @@ ax.text(0, nRespirators,"Num. of respirators", va="bottom", fontsize="small")
 
 # Plot intervention line:
 axY = ax.get_ylim()[1]
-ax.plot(2*[model.intervention_time], [0,axY], "k--", lw=1,label="_nolegend_")
-ax.text(model.intervention_time, axY,"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
+ax.plot(2*[model.t_intervention], [0,axY], "k--", lw=1,label="_nolegend_")
+ax.text(model.t_intervention, axY,"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
