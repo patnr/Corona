@@ -52,7 +52,7 @@ def integrate(f, x0, tt):
     xx[0] = x0
     for k,t in enumerate(tt[:-1]):
         dt = tt[k+1] - t
-        xx[k+1] = rk4(f, xx[k], t+dt, dt)
+        xx[k+1] = rk4(f, xx[k], t, dt)
     return xx
 
 
