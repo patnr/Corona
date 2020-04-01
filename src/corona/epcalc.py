@@ -22,6 +22,7 @@ nPop = 7*10**6
 t_end = 200
 dt    = 0.1
 tt    = linspace(0 , t_end , int(t_end/dt)+1)
+date0 = datetime(2020,2,12)
 
 ## Integrate
 x0 = model.init_state(Infected=1/nPop)
@@ -31,43 +32,46 @@ xx = integrate(model.dxdt, x0, tt)
 # Multiply by population
 xx = nPop * xx
 
+# Unpack
+state = model.NamedVars(*xx.T)
+
 
 ## Plot
 fig, ax = freshfig(1)
 
-state = model.NamedVars(*xx.T)
-
 # Normal plot:
-# # lbl='Susceptible'; ax.plot(tt, getattr(state,lbl), label=lbl, c=colrs[lbl])
-# lbl='Exposed'    ; ax.plot(tt, getattr(state,lbl), label=lbl, c=colrs[lbl])
-# lbl='Infected'   ; ax.plot(tt, getattr(state,lbl), label=lbl, c=colrs[lbl])
-
+# cPlot = Lines(ax,state,tt,date0)
+# cPlot.add("Exposed")
+# cPlot.add("Infected")
 
 # Barchart:
-barchart = StackedBarChart(ax,state,tt)
-barchart.add("Hospitalized")
-barchart.add("Fatalities")
-# barchart.add("Recovered")
-barchart.add("Infected")
-barchart.add("Exposed")
-# barchart.add("Susceptible")
+cPlot = StackedBars(ax,state,tt,date0)
+cPlot.add("Hospitalized")
+cPlot.add("Fatalities")
+# cPlot.add("Recovered")
+cPlot.add("Infected")
+cPlot.add("Exposed")
+# cPlot.add("Susceptible")
 
-# # All state variables (Note: sums to 1):
+# All state variables (should yield constant topline):
 # for f in state._fields:
-#     barchart.add(f)
+#     cPlot.add(f)
 
+cPlot.finalize()
 
-
-add_log_toggler(ax)
-
+## Add more info to plot
 # Plot number of respirators
 # nrk.no/vestland/mener-helsemyndighetene-overdriver-intensivkapasiteten-i-norge-1.14938514
 nRespirators = 2000
-ax.plot([0,t_end], 2*[nRespirators],"k--",lw=1,label="_nolegend_")
+xL = ax.get_xlim()
+ax.plot(xL, 2*[nRespirators],"k--",lw=1,label="_nolegend_")
 # ax.text(t_end, nRespirators,"Num. of respirators", va="bottom", ha="right",fontsize="small")
-ax.text(0, nRespirators,"Num. of respirators", va="bottom", fontsize="small")
+ax.text(xL[0], nRespirators,"Num. of respirators", va="bottom", fontsize="small")
 
 # Plot intervention line:
-axY = ax.get_ylim()[1]
-ax.plot(2*[model.t_intervention], [0,axY], "k--", lw=1,label="_nolegend_")
-ax.text(model.t_intervention, axY,"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
+yL = ax.get_ylim()
+ax.plot(2*[cPlot.t2d(model.t_intervention)], yL, "k--", lw=1,label="_nolegend_")
+ax.text(cPlot.t2d(model.t_intervention), yL[1],"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
+
+##
+##

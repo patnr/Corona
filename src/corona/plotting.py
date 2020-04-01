@@ -8,6 +8,10 @@ import matplotlib.pyplot as plt
 plt.ion()
 
 
+from datetime import datetime, timedelta, timezone
+import matplotlib.dates as mdates
+
+
 def freshfig(num=None,figsize=None,*args,**kwargs):
     """Create/clear figure.
 
@@ -30,6 +34,11 @@ def freshfig(num=None,figsize=None,*args,**kwargs):
     _, ax = plt.subplots(num=fig.number,*args,**kwargs)
     return fig, ax
 
+# Coloschemes - https://www.schemecolor.com
+cs_corona = "#6E1B09", "#D22C2C", "#F07249", "#5D5F5C", "#393A3C"
+cs_aretro = "#EC5E64", "#6B3979", "#28A98F", "#FAD542", "#2ABBDA"
+cs_pastel = "#998AD3", "#E494D3", "#CDF1AF", "#87DCC0", "#88BBE4"
+cs_beach  = "#42B7C2", "#8FC8C4", "#FDF2C5", "#DECA98", "#A0795F", "#623D45"
 
 colrs = dict(
         Fatalities="#386cb0",
@@ -39,6 +48,7 @@ colrs = dict(
         Exposed="#fdc086",
         Susceptible="grey",
         )
+
 import hashlib
 def colrz(component):
     if component in colrs:
@@ -67,7 +77,10 @@ def reverse_legend(ax,**kws):
 
 from matplotlib.widgets import Button, CheckButtons
 def add_log_toggler(ax):
+    """Add button that toggles log. scale."""
+
     def toggle_scale(_):
+        "Toggle log. scale."
         # Get current status
         if isinstance(ax.toggle_log, mpl.widgets.Button):
             log_is_on = getattr(ax,"_log_is_on",False)
@@ -79,12 +92,14 @@ def add_log_toggler(ax):
         # Toggle
         if log_is_on:
             ax.set_yscale("linear")
+            ax.set_ylim(bottom=0)
             ax.yaxis.set_major_formatter(thousands)
         else:
+            ax.autoscale(True,axis="y")
             ax.set_yscale("log")
             ax.yaxis.set_major_formatter(thousands)
         plt.draw()
-    # Toggle log-scale (button)
+
     toggle_ax = ax.figure.add_axes([0.8, 0.8, 0.15, 0.2], frameon=False)
     ax.toggle_log = CheckButtons(toggle_ax, ["Log scale"], [False])
     # toggle_ax = ax.figure.add_axes([0.8, 0.9, 0.15, 0.05])
@@ -92,56 +107,100 @@ def add_log_toggler(ax):
     ax.toggle_log.on_clicked(toggle_scale)
 
 
+class CompartmentalPlot:
+    def __init__(self,ax,state,tt,date0=None,**kwargs):
+        self.ax        = ax
+        self.state     = state
+        self.tt        = tt
+        self.kwargs    = kwargs
 
-class StackedBarChart:
-    """A bar chart (histogram),
+        if date0:
+            if not date0.tzinfo:
+                # MPL returns tz-aware (from user input, eg.),
+                # so we need to make dates tz-aware for comparisons.
+                date0 = date0.replace(tzinfo=timezone.utc)
+            # Time-2-date conversion
+            t2d = lambda t: date0 + (t-tt[0])*timedelta(1)
+        else:
+            # Passthrough
+            t2d = lambda t: t
+        self.date0 = date0
+        self.t2d   = t2d
+        self.dates = t2d(tt)
 
-    but stacking each series on top of the previous.
-    """
-    def __init__(self,ax,state,tt_full):
-        self.ax = ax
-        self.state = state
-        self.tt_full = tt_full
-
-        self.stack = {}
-        self.handles = {}
-
-        self.dt = 2 # plot resolution (in days)
-        t_end = tt_full[-1]
-        self.tt = arange(0,t_end,self.dt)
-
-        # Highlight bars and add day info in legend
-        self.alpha = .65
-        ax.figure.canvas.mpl_connect('pick_event', self.onpick)
+    def finalize(self):
+        ax = self.ax
 
         # Adjust plot properties
-        ax.set_xlabel('Time (days)')
+        # ax.set_xlabel('Time (days)')
         # ax.set_ylabel('People')
-        # ax.set_ylim(0,9e5)
-        ax.set_xlim(0,t_end)
+        ax.set_ylim(bottom=0)
+        ax.set_xlim(*self.dates[[0,-1]])
+
+        # xticks -- datetime
+        if self.date0:
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+            ax.xaxis.set_major_locator(mdates.MonthLocator())
+            ax.xaxis.set_minor_formatter(mdates.DateFormatter('%d'))
+            # ax.xaxis.set_minor_locator(mdates.DayLocator(interval=10))
+            ax.xaxis.set_minor_locator(mdates.AutoDateLocator())
+            ax.figure.autofmt_xdate()
 
         # More adjustments:
         for edge in ["right","left","top"]:
             ax.spines[edge].set_visible(False)
-        ax.grid(axis="y",ls="--",alpha=0.2, color="k")
+        ax.grid(axis="y",ls=":",alpha=0.2, color="k")
         ax.yaxis.set_major_formatter(thousands)
         ax.tick_params(axis="y",pad=-1,length=0)
-        ax.tick_params(axis="both",labelsize="small")
-        plt.setp(ax.get_yticklabels(), ha="left", va="bottom")
+        ax.tick_params(axis="both",which="both",labelsize="small")
+        ax.tick_params(axis="x",which="minor",labelsize="xx-small")
+        plt.setp(ax.get_yticklabels(), alpha=0.4, ha="left", va="bottom", )
+        plt.setp(ax.get_xticklabels(which="both"), alpha=0.4)
         # Would have to use axisartist for access to set_va, set_ha.
+
+        add_log_toggler(ax)
 
         try:    __IPYTHON__
         except: plt.show(block=True)
 
+
+class Lines(CompartmentalPlot):
+    def add(self,label,**kwargs):
+        yy = getattr(self.state, label)
+        self.ax.plot(self.dates, yy.T, label=label, c=colrs[label],
+                **{**self.kwargs, **kwargs})
+
+
+class StackedBars(CompartmentalPlot):
+    """A bar chart (histogram),
+
+    but stacking each series on top of the previous.
+    """
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+
+        # Init stack
+        self.stack = {}
+        self.handles = {}
+
+        # Plot resolution (in days)
+        self.dt_plot = 2
+        self.tt_plot = arange(*self.tt[[0,-1]],self.dt_plot)
+        self.dates_plot = self.t2d(self.tt_plot)
+
+        # Bar selection with highlighting and day info in legend
+        self.alpha = .6
+        self.ax.figure.canvas.mpl_connect('pick_event', self.onpick)
+
     def add(self,label):
         # Down-sample (interpolate)
-        yy = np.interp(self.tt, self.tt_full, getattr(self.state,label))
+        yy = np.interp(self.tt_plot, self.tt, getattr(self.state,label))
          
         # Accumulate bars
         cum = np.sum([y for y in self.stack.values()], 0)
 
         # Plot
-        hh = self.ax.bar(self.tt, yy, .6*self.dt, bottom=cum,
+        hh = self.ax.bar(self.dates_plot, yy, .8*self.dt_plot, bottom=cum,
                 label=label, color=colrz(label),
                 alpha=self.alpha, align="edge",picker=1)
 
@@ -152,42 +211,51 @@ class StackedBarChart:
         self.ax.legend(**leg_kws)
         reverse_legend(self.ax,**leg_kws)
 
-    def day_index(self,t):      return abs(self.tt      - t).argmin()
-    def day_index_full(self,t): return abs(self.tt_full - t).argmin()
-
-    def set_legend_for_day(self,t):
-        iDay = self.day_index_full(t)
-        handles, labels = self.ax.get_legend_handles_labels()
-        for i,lbl in enumerate(labels):
-            num  = getattr(self.state,lbl)[iDay]
-            new  = lbl.split(":")[0] + ": "
-            new += thousands(round2sigfig(num,3))
-            labels[i] = new
-        self.ax.legend(handles[::-1],labels[::-1],
-                title="Day %d"%self.tt_full[iDay],
-                **leg_kws)
-        plt.pause(0.01)
-
-    def set_alpha_for_day(self,t):
-
-        def setter(iDay,alpha):
-            for label, rectangles in self.handles.items():
-                rectangles[iDay].set_alpha(alpha)
-
-        # Reset alpha
-        try:
-            setter(self._iDay_alpha, self.alpha)
-        except AttributeError:
-            pass
-
-        # Set alpha
-        iDay = self.day_index(t)
-        setter(iDay,1)
-        plt.pause(0.01)
-        self._iDay_alpha = iDay
-
     def onpick(self,event):
         rectangle = event.artist
         time = rectangle.xy[0]
-        self.set_legend_for_day(time)
-        self.set_alpha_for_day(time)
+        if self.date0:
+            time = mdates.num2date(time)
+
+        def arr_idx(arr,val):
+            return abs(arr - val).argmin()
+
+        def set_legend_for_day(t):
+            iDay = arr_idx(self.dates, t)
+            handles, labels = self.ax.get_legend_handles_labels()
+            # Parse labels, insert numbers
+            for i,lbl in enumerate(labels):
+                num  = getattr(self.state,lbl)[iDay]
+                new  = lbl.split(":")[0] + ": "
+                new += thousands(round2sigfig(num,3))
+                labels[i] = new
+            # Get day (title) string
+            day = int(self.tt[iDay])
+            title = f"Day {day}"
+            if self.date0:
+                title += ": " + self.dates[iDay].strftime("%b %d, %Y")
+            # Set legend
+            self.ax.legend(handles[::-1],labels[::-1],
+                    title=title, **leg_kws)
+            plt.pause(0.2)
+
+        def set_alpha_for_day(t):
+
+            def setter(iDay,alpha):
+                for label, rectangles in self.handles.items():
+                    rectangles[iDay].set_alpha(alpha)
+
+            # Reset alpha
+            try:
+                setter(self._iDay_alpha, self.alpha)
+            except AttributeError:
+                pass
+
+            # Set alpha
+            iDay = arr_idx(self.dates_plot, t)
+            setter(iDay,1)
+            plt.pause(0.01)
+            self._iDay_alpha = iDay
+
+        set_legend_for_day(time)
+        set_alpha_for_day(time)
