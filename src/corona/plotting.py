@@ -85,6 +85,14 @@ def add_log_toggler(ax):
         if isinstance(ax.toggle_log, mpl.widgets.Button):
             log_is_on = getattr(ax,"_log_is_on",False)
             ax._log_is_on = not log_is_on
+
+            if log_is_on:
+                # ax.toggle_log.label.set_text("Log. scale: Off")
+                ax.toggle_log.color = "w"
+            else:
+                # ax.toggle_log.label.set_text("Log. scale: On")
+                ax.toggle_log.color = "#D5F2E8"
+
         elif isinstance(ax.toggle_log, mpl.widgets.CheckButtons):
             log_is_on = not ax.toggle_log.get_status()[0]
         else: raise TypeError
@@ -100,10 +108,37 @@ def add_log_toggler(ax):
             ax.yaxis.set_major_formatter(thousands)
         plt.draw()
 
-    toggle_ax = ax.figure.add_axes([0.8, 0.8, 0.15, 0.2], frameon=False)
+    # Get rectangle (position) for button placement,
+    # but in figure coordinates, as required by fig.add_axes().
+    height = .05
+    width  = .15
+    fig_coords = ax.figure.transFigure.inverted()
+
+    # Place below legend
+    # plt.pause(0.1) # Must draw before bbox of legend can be known.
+    # leg = ax.get_legend()
+    # bbox = leg.get_window_extent()
+    # frame = leg.get_frame().get_bbox()
+    # x,y,w,h = bbox.transformed(fig_coords).bounds
+    # rect = [x, y-1.01*height, width, height]
+
+    # Place in upper-right corner of ax
+    x,y,w,h = ax.get_position().bounds
+    rect = [x+w-width, y+h-1.01*height, width, height]
+
+    # toggle_ax = ax.figure.add_axes(rect,frameon=True)
+    # ax.toggle_log = Button(toggle_ax, 'Toggle scale',color="w")
+
+    toggle_ax = ax.figure.add_axes(rect,frameon=False)
     ax.toggle_log = CheckButtons(toggle_ax, ["Log scale"], [False])
-    # toggle_ax = ax.figure.add_axes([0.8, 0.9, 0.15, 0.05])
-    #ax.toggle_log = Button(toggle_ax, 'Toggle scale')
+    dh = .3
+    for box,cross in zip(ax.toggle_log.rectangles,ax.toggle_log.lines):
+        box.set_y(dh)
+        box.set_height(1-2*dh)
+        cross[0].set_ydata([dh,1-dh])
+        cross[1].set_ydata([dh,1-dh][::-1])
+
+
     ax.toggle_log.on_clicked(toggle_scale)
 
 
@@ -144,7 +179,7 @@ class CompartmentalPlot:
             ax.xaxis.set_minor_formatter(mdates.DateFormatter('%d'))
             # ax.xaxis.set_minor_locator(mdates.DayLocator(interval=10))
             ax.xaxis.set_minor_locator(mdates.AutoDateLocator())
-            ax.figure.autofmt_xdate()
+            ax.figure.autofmt_xdate(bottom=0.11)
 
         # More adjustments:
         for edge in ["right","left","top"]:
