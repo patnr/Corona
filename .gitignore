@@ -49,6 +49,6 @@ MANIFEST
 # Per-project virtualenvs
 .venv*/
 
-src/corona/epcalc.js
 *tmp*
 *.sqlite
+src/corona/other_scripts
