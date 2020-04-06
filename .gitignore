@@ -51,3 +51,4 @@ MANIFEST
 
 src/corona/epcalc.js
 *tmp*
+*.sqlite
