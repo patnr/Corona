@@ -58,6 +58,7 @@ cPlot.add("Exposed")
 #     cPlot.add(f)
 
 cPlot.finalize()
+reverse_legend(ax,**leg_kws)
 
 ## Add more info to plot
 # Plot number of respirators

@@ -9,7 +9,7 @@ from corona.model import *
 from corona.plotting import *
 
 ## Params
-model = SEIR2()
+model = SEIR2(t_intervention=100)
 # Population size
 nPop = 5*10**6
 # Ens size
@@ -19,6 +19,7 @@ t_end = 365
 dt    = 1
 tt    = linspace(0 , t_end , int(t_end/dt)+1)
 date0 = datetime(2020,2,12)
+# date0 = None
 
 ## Init ensemble
 x0 = model.init_state(Infected=1/nPop)
@@ -38,5 +39,10 @@ fig, ax = freshfig(1)
 cPlot = Lines(ax,state,tt, date0)
 cPlot.add("Exposed")
 cPlot.add("Infected")
+cPlot.add("Hospitalized")
+cPlot.add("Fatalities")
+cPlot.add("Recovered")
 cPlot.finalize()
+
+##
 

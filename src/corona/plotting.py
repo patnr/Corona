@@ -35,10 +35,11 @@ def freshfig(num=None,figsize=None,*args,**kwargs):
     return fig, ax
 
 # Coloschemes - https://www.schemecolor.com
-cs_corona = "#6E1B09", "#D22C2C", "#F07249", "#5D5F5C", "#393A3C"
-cs_aretro = "#EC5E64", "#6B3979", "#28A98F", "#FAD542", "#2ABBDA"
-cs_pastel = "#998AD3", "#E494D3", "#CDF1AF", "#87DCC0", "#88BBE4"
-cs_beach  = "#42B7C2", "#8FC8C4", "#FDF2C5", "#DECA98", "#A0795F", "#623D45"
+palettes = {}
+palettes["corona"] = "#6E1B09", "#D22C2C", "#F07249", "#5D5F5C", "#393A3C"
+palettes["aretro"] = "#EC5E64", "#6B3979", "#28A98F", "#FAD542", "#2ABBDA"
+palettes["pastel"] = "#998AD3", "#E494D3", "#CDF1AF", "#87DCC0", "#88BBE4"
+palettes["beach" ] = "#42B7C2", "#8FC8C4", "#FDF2C5", "#DECA98", "#A0795F", "#623D45"
 
 colrs = dict(
         Fatalities="#386cb0",
@@ -81,7 +82,8 @@ def add_log_toggler(ax):
 
     def toggle_scale(_):
         "Toggle log. scale."
-        # Get current status
+
+        # Get current status -- button
         if isinstance(ax.toggle_log, mpl.widgets.Button):
             log_is_on = getattr(ax,"_log_is_on",False)
             ax._log_is_on = not log_is_on
@@ -92,7 +94,7 @@ def add_log_toggler(ax):
             else:
                 # ax.toggle_log.label.set_text("Log. scale: On")
                 ax.toggle_log.color = "#D5F2E8"
-
+        # Get current status -- Checkmark
         elif isinstance(ax.toggle_log, mpl.widgets.CheckButtons):
             log_is_on = not ax.toggle_log.get_status()[0]
         else: raise TypeError
@@ -104,27 +106,27 @@ def add_log_toggler(ax):
             ax.yaxis.set_major_formatter(thousands)
         else:
             ax.autoscale(True,axis="y")
+            # ax.set_ylim(bottom=1e-3)
             ax.set_yscale("log")
             ax.yaxis.set_major_formatter(thousands)
         plt.draw()
 
     # Get rectangle (position) for button placement,
-    # but in figure coordinates, as required by fig.add_axes().
     height = .05
     width  = .15
-    fig_coords = ax.figure.transFigure.inverted()
-
-    # Place below legend
-    # plt.pause(0.1) # Must draw before bbox of legend can be known.
-    # leg = ax.get_legend()
-    # bbox = leg.get_window_extent()
-    # frame = leg.get_frame().get_bbox()
-    # x,y,w,h = bbox.transformed(fig_coords).bounds
-    # rect = [x, y-1.01*height, width, height]
 
     # Place in upper-right corner of ax
-    x,y,w,h = ax.get_position().bounds
-    rect = [x+w-width, y+h-1.01*height, width, height]
+    # x,y,w,h = ax.get_position().bounds
+    # rect = [x+w-width, y+h-1.01*height, width, height]
+
+    # Place below legend
+    fig_coords = ax.figure.transFigure.inverted() # Convrt to figure coords.
+    plt.pause(0.1) # Must draw before bbox of legend can be known.
+    leg = ax.get_legend()
+    bbox = leg.get_window_extent()
+    frame = leg.get_frame().get_bbox()
+    x,y,w,h = bbox.transformed(fig_coords).bounds
+    rect = [x, y-1.01*height, width, height]
 
     # toggle_ax = ax.figure.add_axes(rect,frameon=True)
     # ax.toggle_log = Button(toggle_ax, 'Toggle scale',color="w")
@@ -142,7 +144,8 @@ def add_log_toggler(ax):
     ax.toggle_log.on_clicked(toggle_scale)
 
 
-class CompartmentalPlot:
+class CPlot:
+    """Plot facilities specialized for concentrations/compartments (positive vars.)"""
     def __init__(self,ax,state,tt,date0=None,**kwargs):
         self.ax        = ax
         self.state     = state
@@ -163,6 +166,8 @@ class CompartmentalPlot:
         self.t2d   = t2d
         self.dates = t2d(tt)
 
+        self.handles = {}
+
     def finalize(self):
         ax = self.ax
 
@@ -179,7 +184,7 @@ class CompartmentalPlot:
             ax.xaxis.set_minor_formatter(mdates.DateFormatter('%d'))
             # ax.xaxis.set_minor_locator(mdates.DayLocator(interval=10))
             ax.xaxis.set_minor_locator(mdates.AutoDateLocator())
-            ax.figure.autofmt_xdate(bottom=0.11)
+            # ax.figure.autofmt_xdate(bottom=0.11,rotation=30)
 
         # More adjustments:
         for edge in ["right","left","top"]:
@@ -193,20 +198,29 @@ class CompartmentalPlot:
         plt.setp(ax.get_xticklabels(which="both"), alpha=0.4)
         # Would have to use axisartist for access to set_va, set_ha.
 
+        ax.legend(**leg_kws)
+
         add_log_toggler(ax)
 
         try:    __IPYTHON__
         except: plt.show(block=True)
 
 
-class Lines(CompartmentalPlot):
+class Lines(CPlot):
+
     def add(self,label,**kwargs):
-        yy = getattr(self.state, label)
-        self.ax.plot(self.dates, yy.T, label=label, c=colrs[label],
-                **{**self.kwargs, **kwargs})
+
+        yy = np.atleast_2d(getattr(self.state, label))
+
+        opts = {'c':colrs[label], **{**self.kwargs, **kwargs}}
+
+        hh = self.ax.plot(self.dates, yy[0 ].T, label=label, **opts)
+        if len(yy)>1:
+            hh += self.ax.plot(self.dates, yy[1:].T, **opts)
+        self.handles[label] = hh
 
 
-class StackedBars(CompartmentalPlot):
+class StackedBars(CPlot):
     """A bar chart (histogram),
 
     but stacking each series on top of the previous.
@@ -216,7 +230,6 @@ class StackedBars(CompartmentalPlot):
 
         # Init stack
         self.stack = {}
-        self.handles = {}
 
         # Plot resolution (in days)
         self.dt_plot = 2
@@ -242,9 +255,6 @@ class StackedBars(CompartmentalPlot):
         # Append bar heights to stack
         self.handles[label] = hh
         self.stack[label] = yy
-
-        self.ax.legend(**leg_kws)
-        reverse_legend(self.ax,**leg_kws)
 
     def onpick(self,event):
         rectangle = event.artist
