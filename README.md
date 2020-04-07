@@ -21,7 +21,7 @@ Works on Linux/Windows/Mac.
 2. **Install**:  
    `$ git clone https://github.com/patricknraanes/Corona.git`  
    `$ pip install -e Corona`  
-   Note: a zip download (via browser instead of git) won't install.
+   NB: don't download via your browser (instead of git). This zip won't install.
 
 3. **Test:**  
    `$ cd Corona/src/corona`  
