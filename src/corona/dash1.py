@@ -62,6 +62,13 @@ dfs = {country: get_df(country) for country in covid19}
 # print(dfs["Norway"].loc["2020-3-29":])
 # print(dfs["Norway"]["2020-3-29":])
 
+## Save df as plain text
+c = "Norway"
+# Write:
+with open(c+".txt","w") as F: F.write(dfs[c].reset_index().to_string(index=False))
+# Read:
+df = pd.read_csv(c+".txt", sep='\s+', index_col=0, parse_dates=True)
+
 
 ## Plot all series for 1 country
 c = "Norway"
