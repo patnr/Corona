@@ -9,10 +9,11 @@ from corona.utils import *
 from corona.maths import *
 from corona.model import *
 from corona.plotting import *
+from mpl_tools import freshfig
 
 ## Params
 
-# model = SEIR2(Rep=3)
+# model = SEIR2(Rep0=3)
 model = SEIR2()
 
 # Population size
@@ -33,7 +34,8 @@ xx = integrate(model.dxdt, x0, tt)
 xx = nPop * xx
 
 # Unpack
-state = model.NamedVars(*xx.T)
+NamedVars = with_diagnostics(model.Variables)
+state = NamedVars(*xx.T)
 
 
 ## Plot

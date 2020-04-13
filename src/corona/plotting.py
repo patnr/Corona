@@ -11,28 +11,7 @@ plt.ion()
 from datetime import datetime, timedelta, timezone
 import matplotlib.dates as mdates
 
-
-def freshfig(num=None,figsize=None,*args,**kwargs):
-    """Create/clear figure.
-
-    Similar to::
-
-      fig, ax = suplots(*args,**kwargs)
-
-    With the modification that:
-
-    - If the figure does not exist: create it.
-      This allows for figure sizing -- even with mpl backend MacOS.
-    - Otherwise: clear figure.
-      Avoids closing/opening so as to keep pos and size.
-    """
-    exists = plt.fignum_exists(num)
-
-    fig = plt.figure(num=num,figsize=figsize)
-    fig.clear()
-
-    _, ax = plt.subplots(num=fig.number,*args,**kwargs)
-    return fig, ax
+import mpl_tools
 
 # Coloschemes - https://www.schemecolor.com
 palettes = {}
@@ -62,8 +41,6 @@ def colrz(component):
         c = colors[HASH%len(colors)]
     return c
 
-thousands = mpl.ticker.StrMethodFormatter('{x:,.7g}')
-
 
 
 leg_kws = dict(loc="upper left", bbox_to_anchor=(0.1,1), fontsize="8")
@@ -75,77 +52,8 @@ def reverse_legend(ax,**kws):
     ax.legend(*zip(*leg),**kws)
 
 
-
-from matplotlib.widgets import Button, CheckButtons
-def add_log_toggler(ax):
-    """Add button that toggles log. scale."""
-
-    def toggle_scale(_):
-        "Toggle log. scale."
-
-        # Get current status -- button
-        if isinstance(ax.toggle_log, mpl.widgets.Button):
-            log_is_on = getattr(ax,"_log_is_on",False)
-            ax._log_is_on = not log_is_on
-
-            if log_is_on:
-                # ax.toggle_log.label.set_text("Log. scale: Off")
-                ax.toggle_log.color = "w"
-            else:
-                # ax.toggle_log.label.set_text("Log. scale: On")
-                ax.toggle_log.color = "#D5F2E8"
-        # Get current status -- Checkmark
-        elif isinstance(ax.toggle_log, mpl.widgets.CheckButtons):
-            log_is_on = not ax.toggle_log.get_status()[0]
-        else: raise TypeError
-
-        # Toggle
-        if log_is_on:
-            ax.set_yscale("linear")
-            ax.set_ylim(bottom=0)
-            ax.yaxis.set_major_formatter(thousands)
-        else:
-            ax.autoscale(True,axis="y")
-            # ax.set_ylim(bottom=1e-3)
-            ax.set_yscale("log")
-            ax.yaxis.set_major_formatter(thousands)
-        plt.draw()
-
-    # Get rectangle (position) for button placement,
-    height = .05
-    width  = .15
-
-    # Place in upper-right corner of ax
-    # x,y,w,h = ax.get_position().bounds
-    # rect = [x+w-width, y+h-1.01*height, width, height]
-
-    # Place below legend
-    fig_coords = ax.figure.transFigure.inverted() # Convrt to figure coords.
-    plt.pause(0.1) # Must draw before bbox of legend can be known.
-    leg = ax.get_legend()
-    bbox = leg.get_window_extent()
-    frame = leg.get_frame().get_bbox()
-    x,y,w,h = bbox.transformed(fig_coords).bounds
-    rect = [x, y-1.01*height, width, height]
-
-    # toggle_ax = ax.figure.add_axes(rect,frameon=True)
-    # ax.toggle_log = Button(toggle_ax, 'Toggle scale',color="w")
-
-    toggle_ax = ax.figure.add_axes(rect,frameon=False)
-    ax.toggle_log = CheckButtons(toggle_ax, ["Log scale"], [False])
-    dh = .3
-    for box,cross in zip(ax.toggle_log.rectangles,ax.toggle_log.lines):
-        box.set_y(dh)
-        box.set_height(1-2*dh)
-        cross[0].set_ydata([dh,1-dh])
-        cross[1].set_ydata([dh,1-dh][::-1])
-
-
-    ax.toggle_log.on_clicked(toggle_scale)
-
-
 class CPlot:
-    """Plot facilities specialized for concentrations/compartments (positive vars.)"""
+    """Plot facilities specialized for Corona/Concentrations/Compartments (positive vars.)"""
     def __init__(self,ax,state,tt,date0=None,**kwargs):
         self.ax        = ax
         self.state     = state
@@ -190,7 +98,7 @@ class CPlot:
         for edge in ["right","left","top"]:
             ax.spines[edge].set_visible(False)
         ax.grid(axis="y",ls=":",alpha=0.2, color="k")
-        ax.yaxis.set_major_formatter(thousands)
+        ax.yaxis.set_major_formatter(mpl_tools.thousands)
         ax.tick_params(axis="y",pad=-1,length=0)
         ax.tick_params(axis="both",which="both",labelsize="small")
         ax.tick_params(axis="x",which="minor",labelsize="xx-small")
@@ -200,7 +108,7 @@ class CPlot:
 
         ax.legend(**leg_kws)
 
-        add_log_toggler(ax)
+        mpl_tools.add_log_toggler(ax,ylim=(1e-2,None))
 
         try:    __IPYTHON__
         except: plt.show(block=True)
@@ -272,7 +180,7 @@ class StackedBars(CPlot):
             for i,lbl in enumerate(labels):
                 num  = getattr(self.state,lbl)[iDay]
                 new  = lbl.split(":")[0] + ": "
-                new += thousands(round2sigfig(num,3))
+                new += mpl_tools.thousands(round2sigfig(num,3))
                 labels[i] = new
             # Get day (title) string
             day = int(self.tt[iDay])

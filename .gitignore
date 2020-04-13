@@ -51,4 +51,5 @@ MANIFEST
 
 *tmp*
 *.sqlite
-src/corona/other_scripts
+src/other_scripts
+Norway.txt
