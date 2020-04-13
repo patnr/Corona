@@ -9,6 +9,12 @@ from corona.utils import *
 from corona.maths import *
 from corona.model import *
 from corona.plotting import *
+
+
+import pathlib
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt 
 from mpl_tools import freshfig
 
 ## Params
@@ -39,7 +45,8 @@ state = NamedVars(*xx.T)
 
 
 ## Plot
-fig, ax = freshfig(1)
+with plt.style.context('epcalc.mplstyle'):
+    fig, ax = freshfig(1)
 
 # Normal plot:
 # coPlot = Lines(ax,state,tt,date0)

@@ -95,13 +95,8 @@ class CoPlot:
             # ax.figure.autofmt_xdate(bottom=0.11,rotation=30)
 
         # More adjustments:
-        for edge in ["right","left","top"]:
-            ax.spines[edge].set_visible(False)
-        ax.grid(axis="y",ls=":",alpha=0.2, color="k")
+        ax.grid(axis="y")
         ax.yaxis.set_major_formatter(mpl_tools.thousands)
-        ax.tick_params(axis="y",pad=-1,length=0)
-        ax.tick_params(axis="both",which="both",labelsize="small")
-        ax.tick_params(axis="x",which="minor",labelsize="xx-small")
         plt.setp(ax.get_yticklabels(), alpha=0.4, ha="left", va="bottom", )
         plt.setp(ax.get_xticklabels(which="both"), alpha=0.4)
         # Would have to use axisartist for access to set_va, set_ha.

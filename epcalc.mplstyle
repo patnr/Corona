@@ -1,0 +1,15 @@
+axes.spines.left   : False
+axes.spines.bottom : False
+axes.spines.top    : False
+axes.spines.right  : False
+
+grid.color     : k
+grid.alpha     : 0.2
+grid.linestyle : :
+axes.grid.axis : y
+
+ytick.major.pad : -1
+ytick.major.size : 0
+
+ytick.labelsize : small
+xtick.labelsize : xx-small
