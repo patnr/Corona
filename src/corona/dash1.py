@@ -9,13 +9,16 @@ from corona.plotting import *
 ## Download data
 import requests
 import requests_cache
+# Cache persitence/expiration
+from datetime import timedelta
+expire_after = timedelta(hours=1)
 
 def get_json(URL):
     # from urllib.parse import urlparse
     # shortened = urlparse(URL).netloc
     import pathlib
     shortened = pathlib.Path(URL).name
-    requests_cache.install_cache(shortened)
+    requests_cache.install_cache(shortened, expire_after=expire_after)
     data = requests.get(URL)
     source = "cache" if data.from_cache else "internet"
     print(f"{shortened} from {source}.")
