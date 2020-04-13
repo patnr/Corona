@@ -52,7 +52,7 @@ def reverse_legend(ax,**kws):
     ax.legend(*zip(*leg),**kws)
 
 
-class CPlot:
+class CoPlot:
     """Plot facilities specialized for Corona/Concentrations/Compartments (positive vars.)"""
     def __init__(self,ax,state,tt,date0=None,**kwargs):
         self.ax        = ax
@@ -114,7 +114,7 @@ class CPlot:
         except: plt.show(block=True)
 
 
-class Lines(CPlot):
+class Lines(CoPlot):
 
     def add(self,label,**kwargs):
 
@@ -128,7 +128,7 @@ class Lines(CPlot):
         self.handles[label] = hh
 
 
-class StackedBars(CPlot):
+class StackedBars(CoPlot):
     """A bar chart (histogram),
 
     but stacking each series on top of the previous.

@@ -37,13 +37,13 @@ state = NamedVars(*EE.T)
 ## Plot
 fig, ax = freshfig(1)
 
-cPlot = Lines(ax,state,tt, date0)
-cPlot.add("Exposed")
-cPlot.add("Infected")
-cPlot.add("Hospitalized")
-cPlot.add("Fatalities")
-cPlot.add("Recovered")
-cPlot.finalize()
+coPlot = Lines(ax,state,tt, date0)
+coPlot.add("Exposed")
+coPlot.add("Infected")
+coPlot.add("Hospitalized")
+coPlot.add("Fatalities")
+coPlot.add("Recovered")
+coPlot.finalize()
 
 ##
 

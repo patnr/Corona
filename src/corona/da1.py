@@ -171,19 +171,19 @@ state = NamedVars(*EEf.T[:,:60,:])
 # Plot
 fig, ax = freshfig(1)
 
-cPlot = Lines(ax, state, tt, None, alpha=0.3, lw=1)
-# cPlot.add("Exposed")
-cPlot.add("Infected")
-cPlot.add("Hospitalized")
-# cPlot.add("Fatalities",alpha=0.1)
-cPlot.add("Recovered")
-cPlot.finalize()
+coPlot = Lines(ax, state, tt, None, alpha=0.3, lw=1)
+# coPlot.add("Exposed")
+coPlot.add("Infected")
+coPlot.add("Hospitalized")
+# coPlot.add("Fatalities",alpha=0.1)
+coPlot.add("Recovered")
+coPlot.finalize()
 
 
 t1 = model.t_intervention
 t2 = t1 + model.dt_intervention
-ax.axvspan(*map(cPlot.t2d, [t1,t2]), alpha=.1, color="b")
-ax.text(cPlot.t2d(model.t_intervention), yL[1],"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
+ax.axvspan(*map(coPlot.t2d, [t1,t2]), alpha=.1, color="b")
+ax.text(coPlot.t2d(model.t_intervention), yL[1],"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
 
 ##
 ##

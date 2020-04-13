@@ -42,24 +42,24 @@ state = NamedVars(*xx.T)
 fig, ax = freshfig(1)
 
 # Normal plot:
-# cPlot = Lines(ax,state,tt,date0)
-# cPlot.add("Exposed")
-# cPlot.add("Infected")
+# coPlot = Lines(ax,state,tt,date0)
+# coPlot.add("Exposed")
+# coPlot.add("Infected")
 
 # Barchart:
-cPlot = StackedBars(ax,state,tt,date0)
-cPlot.add("Hospitalized")
-cPlot.add("Fatalities")
-# cPlot.add("Recovered")
-cPlot.add("Infected")
-cPlot.add("Exposed")
-# cPlot.add("Susceptible")
+coPlot = StackedBars(ax,state,tt,date0)
+coPlot.add("Hospitalized")
+coPlot.add("Fatalities")
+# coPlot.add("Recovered")
+coPlot.add("Infected")
+coPlot.add("Exposed")
+# coPlot.add("Susceptible")
 
 # All state variables (should yield constant topline):
 # for f in state._fields:
-#     cPlot.add(f)
+#     coPlot.add(f)
 
-cPlot.finalize()
+coPlot.finalize()
 reverse_legend(ax,**leg_kws)
 
 ## Add more info to plot
@@ -73,8 +73,8 @@ ax.text(xL[0], nRespirators,"Num. of respirators", va="bottom", fontsize="small"
 
 # Plot intervention line:
 yL = ax.get_ylim()
-ax.plot(2*[cPlot.t2d(model.t_intervention)], yL, "k--", lw=1,label="_nolegend_")
-ax.text(cPlot.t2d(model.t_intervention), yL[1],"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
+ax.plot(2*[coPlot.t2d(model.t_intervention)], yL, "k--", lw=1,label="_nolegend_")
+ax.text(coPlot.t2d(model.t_intervention), yL[1],"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
 
 ##
 ##
