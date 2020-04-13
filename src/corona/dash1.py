@@ -5,6 +5,7 @@ from corona.maths import *
 from corona.model import *
 from corona.plotting import *
 
+import mpl_tools
 
 ## Download data
 import requests
@@ -64,23 +65,24 @@ dfs = {country: get_df(country) for country in covid19}
 
 ## Plot all series for 1 country
 c = "Norway"
-fig, ax = freshfig(1)
+fig, ax = mpl_tools.freshfig(1)
 dfs[c].plot(ax=ax)
-add_log_toggler(ax)
+mpl_tools.add_log_toggler(ax)
 ax.set_title(c)
 
 ## Plot 1 serie for multiple countries
-fig, ax = freshfig(2)
+fig, ax = mpl_tools.freshfig(2)
 series = "deaths"
 countries = "Norway", "Sweden", "France", "UK", "US"
 for c in countries:
     dfs[c][series].plot(ax=ax,label=c)
 ax.legend()
-add_log_toggler(ax)
+ax.set_title(series)
+mpl_tools.add_log_toggler(ax)
 
 
 ## 
-fig, ax = freshfig(3)
+fig, ax = mpl_tools.freshfig(3)
 deaths_intercept = 1 / 10**6 # death (density) for which lines should intersect
 for c in countries:
     # Compute death density
@@ -98,7 +100,7 @@ ax.set_ylabel("Deaths per capita (cDeath)")
 ax.set_title(f"Day 0 defined by cDeath(t)={deaths_intercept}")
 ax.set_xlabel(f"Days (t)")
 ax.legend()
-add_log_toggler(ax)
+mpl_tools.add_log_toggler(ax)
 ##
 
         
