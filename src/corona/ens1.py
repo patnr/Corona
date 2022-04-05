@@ -1,4 +1,3 @@
-##
 """
 """
 
@@ -44,6 +43,3 @@ coPlot.add("Hospitalized")
 coPlot.add("Fatalities")
 coPlot.add("Recovered")
 coPlot.finalize()
-
-##
-

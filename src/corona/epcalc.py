@@ -1,4 +1,3 @@
-##
 """Reproduce ``gabgoh.github.io/COVID``,
 
 which uses a SEIR model elaborated with clinical dynamics.
@@ -18,6 +17,10 @@ model = SEIR2()
 
 # Population size
 nPop = 7*10**6
+
+## Print
+nPop
+##
 
 # Time -- unit: days
 t_end = 200
@@ -75,6 +78,3 @@ ax.text(xL[0], nRespirators,"Num. of respirators", va="bottom", fontsize="small"
 yL = ax.get_ylim()
 ax.plot(2*[coPlot.t2d(model.t_intervention)], yL, "k--", lw=1,label="_nolegend_")
 ax.text(coPlot.t2d(model.t_intervention), yL[1],"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
-
-##
-##

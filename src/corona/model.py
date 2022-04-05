@@ -5,6 +5,9 @@ which uses a SEIR model elaborated with clinical dynamics.
 from corona.utils import *
 from corona.maths import *
 
+# TODO: from seminar w/ Arnoldo Frigessi:
+#       They use negative binomial distributions a lot.
+
 
 @dcs.dataclass
 class SEIR2:

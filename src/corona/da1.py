@@ -1,4 +1,3 @@
-##
 """
 """
 
@@ -184,6 +183,3 @@ t1 = model.t_intervention
 t2 = t1 + model.dt_intervention
 ax.axvspan(*map(coPlot.t2d, [t1,t2]), alpha=.1, color="b")
 ax.text(coPlot.t2d(model.t_intervention), yL[1],"Stricter measures", va="top", ha="right",fontsize="small",rotation=90)
-
-##
-##
