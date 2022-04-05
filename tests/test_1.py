@@ -5,8 +5,8 @@ import pytest
 from corona.utils import *
 from corona.model import *
 
-__author__ = "patricknraanes"
-__copyright__ = "patricknraanes"
+__author__ = "patnr"
+__copyright__ = "patnr"
 __license__ = "mit"
 
 ## Params
